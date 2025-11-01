@@ -47,5 +47,5 @@ __pycache__/
 *.so
 .Python
 
-# Kiro (optional - uncomment if you don't want to share specs)
-# .kiro/
+# Kiro (internal IDE files - not needed in repository)
+.kiro/
