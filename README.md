@@ -64,7 +64,7 @@ cd aion-battle-arena
 
 2. **Navigate to project directory**
 ```bash
-cd AION-POLYGON
+cd "AION Battle Arena"
 ```
 
 3. **Start local server**
@@ -132,7 +132,7 @@ The project uses the following network configurations:
 ## 📁 Project Structure
 
 ```
-AION-POLYGON/
+AION Battle Arena/
 ├── index.html              # Main application file
 ├── js/
 │   ├── polygon-integration.js  # Wallet & blockchain integration
