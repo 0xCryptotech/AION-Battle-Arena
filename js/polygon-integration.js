@@ -261,6 +261,16 @@ function moveBattleToHistory(battleData) {
         const trimmedHistory = history.slice(0, 100);
         
         localStorage.setItem(STORAGE_KEYS.BATTLE_HISTORY, JSON.stringify(trimmedHistory));
+        
+        // Update player statistics (Wave 2)
+        if (battleData.outcome && walletState.address) {
+            updatePlayerStats(walletState.address, {
+                outcome: battleData.outcome,
+                earnings: battleData.earnings || 0,
+                stake: battleData.stakeAmount || 0
+            });
+        }
+        
         console.log('✅ Battle moved to history:', battleData.id);
     } catch (error) {
         console.error('Error moving battle to history:', error);
@@ -282,6 +292,172 @@ function loadBattleHistory() {
     } catch (error) {
         console.error('Error loading battle history:', error);
         return [];
+    }
+}
+
+// ============================================
+// PLAYER STATISTICS TRACKING (Wave 2)
+// ============================================
+
+/**
+ * Initialize player statistics
+ * @param {string} address - Player wallet address
+ * @returns {Object} Initial stats object
+ */
+function initializePlayerStats(address) {
+    return {
+        address: address,
+        totalBattles: 0,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        winRate: 0,
+        totalEarnings: 0,
+        totalLosses: 0,
+        netProfit: 0,
+        currentStreak: 0,
+        longestWinStreak: 0,
+        longestLoseStreak: 0,
+        averageStake: 0,
+        lastUpdated: Date.now(),
+        createdAt: Date.now()
+    };
+}
+
+/**
+ * Load player statistics from localStorage
+ * @param {string} address - Player wallet address
+ * @returns {Object} Player statistics
+ */
+function loadPlayerStats(address) {
+    try {
+        const statsStr = localStorage.getItem(STORAGE_KEYS.USER_STATS);
+        if (!statsStr) {
+            return initializePlayerStats(address);
+        }
+        
+        const allStats = JSON.parse(statsStr);
+        const playerStats = allStats[address.toLowerCase()];
+        
+        if (!playerStats) {
+            return initializePlayerStats(address);
+        }
+        
+        return playerStats;
+    } catch (error) {
+        console.error('Error loading player stats:', error);
+        return initializePlayerStats(address);
+    }
+}
+
+/**
+ * Save player statistics to localStorage
+ * @param {string} address - Player wallet address
+ * @param {Object} stats - Player statistics
+ */
+function savePlayerStats(address, stats) {
+    try {
+        const statsStr = localStorage.getItem(STORAGE_KEYS.USER_STATS);
+        const allStats = statsStr ? JSON.parse(statsStr) : {};
+        
+        allStats[address.toLowerCase()] = {
+            ...stats,
+            lastUpdated: Date.now()
+        };
+        
+        localStorage.setItem(STORAGE_KEYS.USER_STATS, JSON.stringify(allStats));
+        console.log('✅ Player stats saved for:', address);
+    } catch (error) {
+        console.error('Error saving player stats:', error);
+    }
+}
+
+/**
+ * Update player statistics after battle
+ * @param {string} address - Player wallet address
+ * @param {Object} battleResult - Battle result data
+ */
+function updatePlayerStats(address, battleResult) {
+    try {
+        const stats = loadPlayerStats(address);
+        
+        // Update total battles
+        stats.totalBattles++;
+        
+        // Update win/loss/draw
+        if (battleResult.outcome === 'WIN') {
+            stats.wins++;
+            stats.currentStreak = stats.currentStreak >= 0 ? stats.currentStreak + 1 : 1;
+            stats.longestWinStreak = Math.max(stats.longestWinStreak, stats.currentStreak);
+            stats.totalEarnings += battleResult.earnings || 0;
+        } else if (battleResult.outcome === 'LOSS') {
+            stats.losses++;
+            stats.currentStreak = stats.currentStreak <= 0 ? stats.currentStreak - 1 : -1;
+            stats.longestLoseStreak = Math.max(stats.longestLoseStreak, Math.abs(stats.currentStreak));
+            stats.totalLosses += battleResult.stake || 0;
+        } else if (battleResult.outcome === 'DRAW') {
+            stats.draws++;
+            stats.currentStreak = 0;
+        }
+        
+        // Calculate win rate
+        stats.winRate = stats.totalBattles > 0 ? (stats.wins / stats.totalBattles) * 100 : 0;
+        
+        // Calculate net profit
+        stats.netProfit = stats.totalEarnings - stats.totalLosses;
+        
+        // Calculate average stake
+        const totalStake = (stats.totalEarnings + stats.totalLosses) / 2;
+        stats.averageStake = stats.totalBattles > 0 ? totalStake / stats.totalBattles : 0;
+        
+        // Save updated stats
+        savePlayerStats(address, stats);
+        
+        console.log('✅ Player stats updated:', {
+            wins: stats.wins,
+            losses: stats.losses,
+            winRate: stats.winRate.toFixed(2) + '%',
+            netProfit: stats.netProfit
+        });
+        
+        return stats;
+    } catch (error) {
+        console.error('Error updating player stats:', error);
+        return null;
+    }
+}
+
+/**
+ * Get player statistics
+ * @param {string} address - Player wallet address (optional, uses current user if not provided)
+ * @returns {Object} Player statistics
+ */
+function getPlayerStats(address = null) {
+    const playerAddress = address || walletState.address;
+    if (!playerAddress) {
+        console.warn('No address provided and no wallet connected');
+        return null;
+    }
+    
+    return loadPlayerStats(playerAddress);
+}
+
+/**
+ * Reset player statistics
+ * @param {string} address - Player wallet address
+ */
+function resetPlayerStats(address) {
+    try {
+        const statsStr = localStorage.getItem(STORAGE_KEYS.USER_STATS);
+        if (!statsStr) return;
+        
+        const allStats = JSON.parse(statsStr);
+        delete allStats[address.toLowerCase()];
+        
+        localStorage.setItem(STORAGE_KEYS.USER_STATS, JSON.stringify(allStats));
+        console.log('✅ Player stats reset for:', address);
+    } catch (error) {
+        console.error('Error resetting player stats:', error);
     }
 }
 
@@ -887,4 +1063,11 @@ window.clearAllBattleSessions = clearAllBattleSessions;
 window.moveBattleToHistory = moveBattleToHistory;
 window.loadBattleHistory = loadBattleHistory;
 window.restoreActiveBattles = restoreActiveBattles;
+// Player statistics (Wave 2)
+window.initializePlayerStats = initializePlayerStats;
+window.loadPlayerStats = loadPlayerStats;
+window.savePlayerStats = savePlayerStats;
+window.updatePlayerStats = updatePlayerStats;
+window.getPlayerStats = getPlayerStats;
+window.resetPlayerStats = resetPlayerStats;
 window.hideNetworkWarning = hideNetworkWarning;
