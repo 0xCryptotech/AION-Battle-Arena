@@ -40,6 +40,181 @@ let contract = null;
 let userAddress = null;
 let isConnected = false;
 
+// ============================================
+// WALLET PERSISTENCE UTILITIES (Wave 2)
+// ============================================
+
+const STORAGE_KEYS = {
+    WALLET_STATE: 'aion_wallet_state',
+    WALLET_ADDRESS: 'aion_wallet_address',
+    WALLET_CONNECTED: 'aion_wallet_connected',
+    LAST_CONNECTED: 'aion_last_connected'
+};
+
+/**
+ * Save wallet state to localStorage
+ * @param {string} address - Wallet address
+ */
+function saveWalletState(address) {
+    try {
+        const walletData = {
+            address: address,
+            connected: true,
+            timestamp: Date.now(),
+            chainId: walletState.chainId
+        };
+        
+        localStorage.setItem(STORAGE_KEYS.WALLET_STATE, JSON.stringify(walletData));
+        localStorage.setItem(STORAGE_KEYS.WALLET_ADDRESS, address);
+        localStorage.setItem(STORAGE_KEYS.WALLET_CONNECTED, 'true');
+        localStorage.setItem(STORAGE_KEYS.LAST_CONNECTED, Date.now().toString());
+        
+        console.log('✅ Wallet state saved to localStorage');
+    } catch (error) {
+        console.error('Error saving wallet state:', error);
+    }
+}
+
+/**
+ * Load wallet state from localStorage
+ * @returns {Object|null} Saved wallet data or null
+ */
+function loadWalletState() {
+    try {
+        const walletDataStr = localStorage.getItem(STORAGE_KEYS.WALLET_STATE);
+        if (!walletDataStr) {
+            console.log('No saved wallet state found');
+            return null;
+        }
+        
+        const walletData = JSON.parse(walletDataStr);
+        
+        // Check if data is not too old (24 hours)
+        const maxAge = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        if (Date.now() - walletData.timestamp > maxAge) {
+            console.log('Saved wallet state expired');
+            clearWalletState();
+            return null;
+        }
+        
+        console.log('✅ Wallet state loaded from localStorage:', walletData.address);
+        return walletData;
+    } catch (error) {
+        console.error('Error loading wallet state:', error);
+        return null;
+    }
+}
+
+/**
+ * Clear wallet state from localStorage
+ */
+function clearWalletState() {
+    try {
+        localStorage.removeItem(STORAGE_KEYS.WALLET_STATE);
+        localStorage.removeItem(STORAGE_KEYS.WALLET_ADDRESS);
+        localStorage.removeItem(STORAGE_KEYS.WALLET_CONNECTED);
+        localStorage.removeItem(STORAGE_KEYS.LAST_CONNECTED);
+        
+        console.log('✅ Wallet state cleared from localStorage');
+    } catch (error) {
+        console.error('Error clearing wallet state:', error);
+    }
+}
+
+/**
+ * Check if wallet was previously connected
+ * @returns {boolean}
+ */
+function wasWalletConnected() {
+    const connected = localStorage.getItem(STORAGE_KEYS.WALLET_CONNECTED);
+    return connected === 'true';
+}
+
+/**
+ * Attempt to auto-reconnect wallet on page load
+ * @returns {Promise<boolean>} True if reconnection successful
+ */
+async function attemptAutoReconnect() {
+    console.log('🔄 Attempting auto-reconnect...');
+    
+    // Check if wallet was previously connected
+    if (!wasWalletConnected()) {
+        console.log('No previous connection found');
+        return false;
+    }
+    
+    // Load saved wallet state
+    const savedState = loadWalletState();
+    if (!savedState) {
+        console.log('No valid saved state');
+        return false;
+    }
+    
+    try {
+        // Initialize Web3
+        if (!await initWeb3()) {
+            console.log('Failed to initialize Web3');
+            clearWalletState();
+            return false;
+        }
+        
+        // Get current accounts from MetaMask
+        const accounts = await provider.send("eth_accounts", []);
+        
+        if (accounts.length === 0) {
+            console.log('No accounts found in MetaMask');
+            clearWalletState();
+            return false;
+        }
+        
+        // Check if saved address matches current account
+        const currentAddress = accounts[0];
+        if (currentAddress.toLowerCase() !== savedState.address.toLowerCase()) {
+            console.log('Saved address does not match current account');
+            clearWalletState();
+            return false;
+        }
+        
+        // Reconnect wallet
+        signer = provider.getSigner();
+        userAddress = currentAddress;
+        
+        // Update wallet state
+        walletState.address = userAddress;
+        walletState.signer = signer;
+        walletState.isConnected = true;
+        
+        // Check network
+        const network = await provider.getNetwork();
+        walletState.chainId = network.chainId;
+        
+        if (!checkNetwork()) {
+            showNetworkWarning();
+        } else {
+            hideNetworkWarning();
+        }
+        
+        // Update backward compatibility variables
+        isConnected = true;
+        
+        // Update UI
+        updateWalletUI();
+        
+        // Get balances
+        await updateBalances();
+        
+        console.log('✅ Auto-reconnect successful!');
+        showNotification('Wallet reconnected automatically', 'success');
+        
+        return true;
+        
+    } catch (error) {
+        console.error('Auto-reconnect failed:', error);
+        clearWalletState();
+        return false;
+    }
+}
+
 // Initialize Web3
 async function initWeb3() {
     if (typeof window.ethereum === 'undefined') {
@@ -127,6 +302,9 @@ async function connectWallet() {
         // Get balances
         await updateBalances();
         
+        // Save wallet state to localStorage (Wave 2)
+        saveWalletState(userAddress);
+        
         // Hide loading and show success
         hideLoading();
         showNotification('Wallet connected successfully!', 'success');
@@ -169,6 +347,9 @@ async function switchToPolygonAmoy() {
  * Clears wallet state and updates UI
  */
 function disconnectWallet() {
+    // Clear wallet state from localStorage (Wave 2)
+    clearWalletState();
+    
     // Clear wallet state
     initializeWallet();
     
@@ -440,13 +621,19 @@ if (window.ethereum) {
     });
 }
 
-// Initialize on page load (NO auto-connect as per requirements)
+// Initialize on page load with auto-reconnect (Wave 2)
 window.addEventListener('load', async () => {
-    // Just initialize Web3 provider if available
+    // Initialize Web3 provider if available
     if (window.ethereum) {
         await initWeb3();
+        setupEventListeners();
+        
+        // Attempt auto-reconnect if user was previously connected
+        await attemptAutoReconnect();
     }
-    // User must manually click Connect Wallet button
+    
+    // Setup UI event listeners
+    setupUIEventListeners();
 });
 
 // Export functions for global use
