@@ -2134,7 +2134,7 @@
                             <i data-lucide="swords" class="h-6 w-6 text-red-500"></i>
                             Battle Metrics
                         </h3>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                             <div
                                 class="bg-gradient-to-br from-green-900/30 to-black border border-green-500/30 rounded-lg p-4 hover:scale-105 transition-all">
                                 <div class="text-xs text-gray-400 mb-1">Total Battles</div>
@@ -2146,18 +2146,85 @@
                                 <div class="text-2xl font-bold text-blue-400" id="userWins">0</div>
                             </div>
                             <div
+                                class="bg-gradient-to-br from-red-900/30 to-black border border-red-500/30 rounded-lg p-4 hover:scale-105 transition-all">
+                                <div class="text-xs text-gray-400 mb-1">Losses</div>
+                                <div class="text-2xl font-bold text-red-400" id="userLosses">0</div>
+                            </div>
+                            <div
                                 class="bg-gradient-to-br from-yellow-900/30 to-black border border-yellow-500/30 rounded-lg p-4 hover:scale-105 transition-all">
                                 <div class="text-xs text-gray-400 mb-1">Win Rate</div>
                                 <div class="text-2xl font-bold text-yellow-400" id="userWinRate">0%</div>
                             </div>
+                        </div>
+                        
+                        <!-- Additional Stats Row -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                             <div
                                 class="bg-gradient-to-br from-purple-900/30 to-black border border-purple-500/30 rounded-lg p-4 hover:scale-105 transition-all">
-                                <div class="text-xs text-gray-400 mb-1">Total Earned</div>
-                                <div class="text-2xl font-bold text-purple-400" id="userRewards">0</div>
+                                <div class="text-xs text-gray-400 mb-1">Net Profit</div>
+                                <div class="text-2xl font-bold text-purple-400" id="userRewards">0 AION</div>
+                            </div>
+                            <div
+                                class="bg-gradient-to-br from-orange-900/30 to-black border border-orange-500/30 rounded-lg p-4 hover:scale-105 transition-all">
+                                <div class="text-xs text-gray-400 mb-1">Current Streak</div>
+                                <div class="text-2xl font-bold text-orange-400" id="userStreak">0</div>
+                            </div>
+                            <div
+                                class="bg-gradient-to-br from-pink-900/30 to-black border border-pink-500/30 rounded-lg p-4 hover:scale-105 transition-all">
+                                <div class="text-xs text-gray-400 mb-1">Best Streak</div>
+                                <div class="text-2xl font-bold text-pink-400" id="userLongestStreak">0</div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Performance Chart -->
+                    <div class="backdrop-blur-lg bg-white/5 border border-red-700/30 rounded-xl p-6 shadow-xl">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <i data-lucide="pie-chart" class="h-5 w-5 text-purple-500"></i>
+                            Performance Overview
+                        </h3>
+                        
+                        <!-- Win/Loss Bar Chart -->
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm text-gray-400">Win/Loss Ratio</span>
+                                <span class="text-sm text-white font-bold" id="winLossRatio">0:0</span>
+                            </div>
+                            <div class="flex h-10 sm:h-8 rounded-lg overflow-hidden bg-gray-800 shadow-inner">
+                                <div id="winBar" class="bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center text-white text-xs font-bold transition-all duration-500" style="width: 0%">
+                                    <span id="winBarText"></span>
+                                </div>
+                                <div id="lossBar" class="bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center text-white text-xs font-bold transition-all duration-500" style="width: 0%">
+                                    <span id="lossBarText"></span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-1 text-xs">
+                                <span class="text-green-400">✓ Wins</span>
+                                <span class="text-red-400">✗ Losses</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Stats Grid -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-white/5 rounded-lg p-3">
+                                <div class="text-xs text-gray-400 mb-1">Total Earnings</div>
+                                <div class="text-lg font-bold text-green-400" id="userTotalEarnings">0 AION</div>
+                            </div>
+                            <div class="bg-white/5 rounded-lg p-3">
+                                <div class="text-xs text-gray-400 mb-1">Total Losses</div>
+                                <div class="text-lg font-bold text-red-400" id="userTotalLosses">0 AION</div>
+                            </div>
+                            <div class="bg-white/5 rounded-lg p-3">
+                                <div class="text-xs text-gray-400 mb-1">Avg Stake</div>
+                                <div class="text-lg font-bold text-blue-400" id="userAvgStake">0 AION</div>
+                            </div>
+                            <div class="bg-white/5 rounded-lg p-3">
+                                <div class="text-xs text-gray-400 mb-1">Total Battles</div>
+                                <div class="text-lg font-bold text-purple-400" id="userTotalBattlesChart">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Stats Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="backdrop-blur-lg bg-white/5 border border-red-700/30 rounded-xl p-6 shadow-xl">
@@ -2378,23 +2445,74 @@
         // Load leaderboard when page opens
         document.addEventListener('DOMContentLoaded', loadLeaderboard);
 
-        // User Info functionality
+        // User Info functionality - Updated with real stats from Wave 2
         function updateUserInfo() {
             if (isConnected && walletAddress) {
-                const totalBattles = Math.floor(Math.random() * 50 + 20);
-                const wins = Math.floor(totalBattles * (Math.random() * 0.3 + 0.6));
-                const winRate = ((wins / totalBattles) * 100).toFixed(1);
-
-                document.getElementById('userWalletAddress').textContent = walletAddress.substring(0, 6) + '...' + walletAddress.substring(38);
+                // Get real player statistics from localStorage
+                const stats = getPlayerStats(walletAddress);
+                
+                if (stats) {
+                    // Update battle metrics
+                    document.getElementById('userPredictions').textContent = stats.totalBattles || 0;
+                    document.getElementById('userWins').textContent = stats.wins || 0;
+                    document.getElementById('userWinRate').textContent = (stats.winRate || 0).toFixed(1) + '%';
+                    document.getElementById('userRewards').textContent = (stats.netProfit || 0).toFixed(2) + ' AION';
+                    
+                    // Update losses
+                    const lossesEl = document.getElementById('userLosses');
+                    if (lossesEl) lossesEl.textContent = stats.losses || 0;
+                    
+                    // Update streak with emoji indicators
+                    const streakEl = document.getElementById('userStreak');
+                    if (streakEl) {
+                        const streak = stats.currentStreak || 0;
+                        streakEl.textContent = streak > 0 ? `+${streak} 🔥` : streak < 0 ? `${streak} ❄️` : '0';
+                    }
+                    
+                    // Update longest win streak
+                    const longestStreakEl = document.getElementById('userLongestStreak');
+                    if (longestStreakEl) longestStreakEl.textContent = stats.longestWinStreak || 0;
+                    
+                    // Update wallet info
+                    document.getElementById('userWalletAddress').textContent = walletAddress.substring(0, 6) + '...' + walletAddress.substring(38);
+                    
+                    // Update earnings display (Bull/Bear stats sections)
+                    const totalEarnings = stats.totalEarnings || 0;
+                    const totalLosses = stats.totalLosses || 0;
+                    document.getElementById('userTotalStaked').textContent = totalEarnings.toFixed(2) + ' AION';
+                    document.getElementById('userActiveStakes').textContent = totalLosses.toFixed(2) + ' AION';
+                    
+                    // Update performance chart
+                    updatePerformanceChart(stats);
+                    
+                    // Update battle history display
+                    updateBattleHistoryDisplay();
+                    
+                    console.log('✅ User info updated with real stats:', stats);
+                } else {
+                    // No stats yet - show zeros
+                    document.getElementById('userPredictions').textContent = '0';
+                    document.getElementById('userWins').textContent = '0';
+                    document.getElementById('userWinRate').textContent = '0%';
+                    document.getElementById('userRewards').textContent = '0 AION';
+                    document.getElementById('userTotalStaked').textContent = '0 AION';
+                    document.getElementById('userActiveStakes').textContent = '0 AION';
+                    
+                    const lossesEl = document.getElementById('userLosses');
+                    if (lossesEl) lossesEl.textContent = '0';
+                    
+                    const streakEl = document.getElementById('userStreak');
+                    if (streakEl) streakEl.textContent = '0';
+                    
+                    const longestStreakEl = document.getElementById('userLongestStreak');
+                    if (longestStreakEl) longestStreakEl.textContent = '0';
+                }
+                
+                // Update balance (keep existing logic for now)
                 document.getElementById('userAionBalance').textContent = (Math.random() * 10000 + 1000).toFixed(2) + ' AION';
                 document.getElementById('userEthBalance').textContent = (Math.random() * 5).toFixed(4) + ' ETH';
-                document.getElementById('userTotalStaked').textContent = (Math.random() * 5000).toFixed(2);
-                document.getElementById('userActiveStakes').textContent = (Math.random() * 3000).toFixed(2);
-                document.getElementById('userRewards').textContent = (Math.random() * 500).toFixed(2) + ' AION';
-                document.getElementById('userPredictions').textContent = totalBattles;
-                document.getElementById('userWins').textContent = wins;
-                document.getElementById('userWinRate').textContent = winRate + '%';
             } else {
+                // Not connected - show default values
                 document.getElementById('userWalletAddress').textContent = 'Not Connected';
                 document.getElementById('userAionBalance').textContent = '0';
                 document.getElementById('userEthBalance').textContent = '0';
@@ -2406,29 +2524,180 @@
                 document.getElementById('userWinRate').textContent = '0%';
             }
         }
+        
+        /**
+         * Update performance chart with real data
+         */
+        function updatePerformanceChart(stats) {
+            if (!stats) return;
+            
+            const wins = stats.wins || 0;
+            const losses = stats.losses || 0;
+            const total = wins + losses;
+            
+            // Update win/loss ratio text
+            const ratioEl = document.getElementById('winLossRatio');
+            if (ratioEl) ratioEl.textContent = `${wins}:${losses}`;
+            
+            // Update bar chart
+            if (total > 0) {
+                const winPercent = (wins / total) * 100;
+                const lossPercent = (losses / total) * 100;
+                
+                const winBar = document.getElementById('winBar');
+                const lossBar = document.getElementById('lossBar');
+                const winBarText = document.getElementById('winBarText');
+                const lossBarText = document.getElementById('lossBarText');
+                
+                if (winBar) {
+                    winBar.style.width = winPercent + '%';
+                    if (winBarText && winPercent > 10) winBarText.textContent = wins;
+                }
+                
+                if (lossBar) {
+                    lossBar.style.width = lossPercent + '%';
+                    if (lossBarText && lossPercent > 10) lossBarText.textContent = losses;
+                }
+            }
+            
+            // Update additional chart stats
+            const totalEarningsEl = document.getElementById('userTotalEarnings');
+            if (totalEarningsEl) totalEarningsEl.textContent = (stats.totalEarnings || 0).toFixed(2) + ' AION';
+            
+            const totalLossesEl = document.getElementById('userTotalLosses');
+            if (totalLossesEl) totalLossesEl.textContent = (stats.totalLosses || 0).toFixed(2) + ' AION';
+            
+            const avgStakeEl = document.getElementById('userAvgStake');
+            if (avgStakeEl) avgStakeEl.textContent = (stats.averageStake || 0).toFixed(2) + ' AION';
+            
+            const totalBattlesChartEl = document.getElementById('userTotalBattlesChart');
+            if (totalBattlesChartEl) totalBattlesChartEl.textContent = stats.totalBattles || 0;
+        }
+        
+        /**
+         * Update battle history display with real data
+         */
+        function updateBattleHistoryDisplay() {
+            const historyContainer = document.getElementById('userRecentStakes');
+            if (!historyContainer) return;
+            
+            const history = loadBattleHistory();
+            
+            if (history.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="text-center py-8 text-gray-400">
+                        <i data-lucide="inbox" class="h-12 w-12 mx-auto mb-2 opacity-50"></i>
+                        <p>No battle history yet</p>
+                        <p class="text-sm mt-1">Start battling to see your history here!</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+            
+            // Show last 10 battles
+            const recentBattles = history.slice(0, 10);
+            
+            historyContainer.innerHTML = recentBattles.map(battle => {
+                const isWin = battle.outcome === 'WIN';
+                const isDraw = battle.outcome === 'DRAW';
+                const borderColor = isWin ? 'green-500/30' : isDraw ? 'yellow-500/30' : 'red-500/30';
+                const textColor = isWin ? 'green-400' : isDraw ? 'yellow-400' : 'red-400';
+                const bgColor = isWin ? 'green-500/20' : isDraw ? 'yellow-500/20' : 'red-500/20';
+                const earnings = battle.earnings || 0;
+                const earningsText = isWin ? `+${earnings.toFixed(2)} AION` : isDraw ? '0 AION' : `-${Math.abs(earnings).toFixed(2)} AION`;
+                const timeAgo = getTimeAgo(battle.completedAt);
+                
+                return `
+                    <div class="bg-white/5 border border-${borderColor} rounded-lg p-3 hover:bg-white/10 transition-all">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-white font-semibold text-sm">${battle.asset || 'Unknown'} ${battle.direction || ''}</span>
+                            <span class="text-${textColor} font-bold text-sm">${earningsText}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-400">${timeAgo}</span>
+                            <span class="bg-${bgColor} text-${textColor} px-2 py-0.5 rounded">${battle.outcome || 'UNKNOWN'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            lucide.createIcons();
+        }
+        
+        /**
+         * Get time ago string from timestamp
+         */
+        function getTimeAgo(timestamp) {
+            const seconds = Math.floor((Date.now() - timestamp) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return Math.floor(seconds / 60) + ' minutes ago';
+            if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
+            if (seconds < 604800) return Math.floor(seconds / 86400) + ' days ago';
+            return Math.floor(seconds / 604800) + ' weeks ago';
+        }
 
         function refreshUserInfo() {
             if (!isConnected) {
-                alert('Please connect your wallet first!');
+                showNotification('Please connect your wallet first!', 'warning');
                 return;
             }
+            
             updateUserInfo();
-            alert('User data refreshed!');
+            
+            // Show success notification with stats summary
+            const stats = getPlayerStats(walletAddress);
+            if (stats) {
+                showNotification(
+                    `Stats refreshed! ${stats.totalBattles} battles, ${stats.wins} wins, ${stats.winRate.toFixed(1)}% win rate`,
+                    'success'
+                );
+            } else {
+                showNotification('User data refreshed!', 'success');
+            }
         }
 
         function exportUserData() {
             if (!isConnected) {
-                alert('Please connect your wallet first!');
+                showNotification('Please connect your wallet first!', 'warning');
                 return;
             }
+            
+            // Get comprehensive stats
+            const stats = getPlayerStats(walletAddress);
+            const battleHistory = loadBattleHistory();
+            
             const data = {
                 wallet: walletAddress,
-                timestamp: new Date().toISOString(),
-                balance: document.getElementById('userAionBalance').textContent,
-                staked: document.getElementById('userTotalStaked').textContent,
-                rewards: document.getElementById('userRewards').textContent
+                exportedAt: new Date().toISOString(),
+                statistics: stats || {
+                    totalBattles: 0,
+                    wins: 0,
+                    losses: 0,
+                    winRate: 0,
+                    netProfit: 0
+                },
+                battleHistory: battleHistory.slice(0, 50), // Last 50 battles
+                balance: {
+                    aion: document.getElementById('userAionBalance').textContent,
+                    eth: document.getElementById('userEthBalance').textContent
+                }
             };
-            alert('Export Data:\n\n' + JSON.stringify(data, null, 2));
+            
+            // Create downloadable JSON file
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `aion-stats-${walletAddress.substring(0, 8)}-${Date.now()}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showNotification('Stats exported successfully!', 'success');
         }
 
         // Profile management
