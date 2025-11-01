@@ -2803,9 +2803,21 @@
 
             // Wait for modal to render before updating price
             setTimeout(() => {
-                updateLivePrice('ai');
-                startLivePriceAnimation('ai');
-            }, 100);
+                console.log('🚀 Initializing AI battle modal prices...');
+                const priceEl = document.getElementById('ai-live-price');
+                if (priceEl) {
+                    console.log('✅ Price element found, starting updates');
+                    updateLivePrice('ai');
+                    startLivePriceAnimation('ai');
+                } else {
+                    console.error('❌ Price element not found! Retrying...');
+                    // Retry after longer delay
+                    setTimeout(() => {
+                        updateLivePrice('ai');
+                        startLivePriceAnimation('ai');
+                    }, 500);
+                }
+            }, 200);
         }
 
         let selectedBetSide = null;
@@ -3508,9 +3520,20 @@
 
             // Wait for modal to render before updating price
             setTimeout(() => {
-                updateLivePrice('human');
-                startLivePriceAnimation('human');
-            }, 100);
+                console.log('🚀 Initializing Human battle modal prices...');
+                const priceEl = document.getElementById('human-live-price');
+                if (priceEl) {
+                    console.log('✅ Price element found, starting updates');
+                    updateLivePrice('human');
+                    startLivePriceAnimation('human');
+                } else {
+                    console.error('❌ Price element not found! Retrying...');
+                    setTimeout(() => {
+                        updateLivePrice('human');
+                        startLivePriceAnimation('human');
+                    }, 500);
+                }
+            }, 200);
         }
 
         function startHumanBattle() {
@@ -3764,9 +3787,20 @@
 
             // Wait for modal to render before updating price
             setTimeout(() => {
-                updateLivePrice('pvp');
-                startLivePriceAnimation('pvp');
-            }, 100);
+                console.log('🚀 Initializing PvP battle modal prices...');
+                const priceEl = document.getElementById('pvp-live-price');
+                if (priceEl) {
+                    console.log('✅ Price element found, starting updates');
+                    updateLivePrice('pvp');
+                    startLivePriceAnimation('pvp');
+                } else {
+                    console.error('❌ Price element not found! Retrying...');
+                    setTimeout(() => {
+                        updateLivePrice('pvp');
+                        startLivePriceAnimation('pvp');
+                    }, 500);
+                }
+            }, 200);
         }
 
         let pvpPosition = null;
