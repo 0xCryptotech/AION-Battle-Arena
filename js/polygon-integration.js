@@ -48,7 +48,10 @@ const STORAGE_KEYS = {
     WALLET_STATE: 'aion_wallet_state',
     WALLET_ADDRESS: 'aion_wallet_address',
     WALLET_CONNECTED: 'aion_wallet_connected',
-    LAST_CONNECTED: 'aion_last_connected'
+    LAST_CONNECTED: 'aion_last_connected',
+    ACTIVE_BATTLES: 'aion_active_battles',
+    BATTLE_HISTORY: 'aion_battle_history',
+    USER_STATS: 'aion_user_stats'
 };
 
 /**
@@ -128,6 +131,158 @@ function clearWalletState() {
 function wasWalletConnected() {
     const connected = localStorage.getItem(STORAGE_KEYS.WALLET_CONNECTED);
     return connected === 'true';
+}
+
+// ============================================
+// BATTLE SESSION MANAGEMENT (Wave 2)
+// ============================================
+
+/**
+ * Save battle session to localStorage
+ * @param {Object} battleData - Battle session data
+ */
+function saveBattleSession(battleData) {
+    try {
+        const activeBattles = loadBattleSessions() || [];
+        
+        // Check if battle already exists
+        const existingIndex = activeBattles.findIndex(b => b.id === battleData.id);
+        
+        if (existingIndex >= 0) {
+            // Update existing battle
+            activeBattles[existingIndex] = {
+                ...activeBattles[existingIndex],
+                ...battleData,
+                lastUpdated: Date.now()
+            };
+        } else {
+            // Add new battle
+            activeBattles.push({
+                ...battleData,
+                createdAt: Date.now(),
+                lastUpdated: Date.now()
+            });
+        }
+        
+        localStorage.setItem(STORAGE_KEYS.ACTIVE_BATTLES, JSON.stringify(activeBattles));
+        console.log('✅ Battle session saved:', battleData.id);
+    } catch (error) {
+        console.error('Error saving battle session:', error);
+    }
+}
+
+/**
+ * Load all active battle sessions from localStorage
+ * @returns {Array} Array of battle sessions
+ */
+function loadBattleSessions() {
+    try {
+        const battlesStr = localStorage.getItem(STORAGE_KEYS.ACTIVE_BATTLES);
+        if (!battlesStr) {
+            return [];
+        }
+        
+        const battles = JSON.parse(battlesStr);
+        
+        // Filter out expired battles (older than 24 hours)
+        const maxAge = 24 * 60 * 60 * 1000;
+        const validBattles = battles.filter(battle => {
+            return (Date.now() - battle.createdAt) < maxAge;
+        });
+        
+        // Update storage if we filtered any battles
+        if (validBattles.length !== battles.length) {
+            localStorage.setItem(STORAGE_KEYS.ACTIVE_BATTLES, JSON.stringify(validBattles));
+        }
+        
+        console.log(`✅ Loaded ${validBattles.length} active battle sessions`);
+        return validBattles;
+    } catch (error) {
+        console.error('Error loading battle sessions:', error);
+        return [];
+    }
+}
+
+/**
+ * Remove battle session from active battles
+ * @param {string} battleId - Battle ID to remove
+ */
+function removeBattleSession(battleId) {
+    try {
+        const activeBattles = loadBattleSessions();
+        const filteredBattles = activeBattles.filter(b => b.id !== battleId);
+        
+        localStorage.setItem(STORAGE_KEYS.ACTIVE_BATTLES, JSON.stringify(filteredBattles));
+        console.log('✅ Battle session removed:', battleId);
+    } catch (error) {
+        console.error('Error removing battle session:', error);
+    }
+}
+
+/**
+ * Get specific battle session
+ * @param {string} battleId - Battle ID
+ * @returns {Object|null} Battle session or null
+ */
+function getBattleSession(battleId) {
+    const battles = loadBattleSessions();
+    return battles.find(b => b.id === battleId) || null;
+}
+
+/**
+ * Clear all battle sessions
+ */
+function clearAllBattleSessions() {
+    try {
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_BATTLES);
+        console.log('✅ All battle sessions cleared');
+    } catch (error) {
+        console.error('Error clearing battle sessions:', error);
+    }
+}
+
+/**
+ * Move battle to history
+ * @param {Object} battleData - Completed battle data
+ */
+function moveBattleToHistory(battleData) {
+    try {
+        // Remove from active battles
+        removeBattleSession(battleData.id);
+        
+        // Add to battle history
+        const history = loadBattleHistory();
+        history.unshift({
+            ...battleData,
+            completedAt: Date.now()
+        });
+        
+        // Keep only last 100 battles
+        const trimmedHistory = history.slice(0, 100);
+        
+        localStorage.setItem(STORAGE_KEYS.BATTLE_HISTORY, JSON.stringify(trimmedHistory));
+        console.log('✅ Battle moved to history:', battleData.id);
+    } catch (error) {
+        console.error('Error moving battle to history:', error);
+    }
+}
+
+/**
+ * Load battle history from localStorage
+ * @returns {Array} Array of completed battles
+ */
+function loadBattleHistory() {
+    try {
+        const historyStr = localStorage.getItem(STORAGE_KEYS.BATTLE_HISTORY);
+        if (!historyStr) {
+            return [];
+        }
+        
+        return JSON.parse(historyStr);
+    } catch (error) {
+        console.error('Error loading battle history:', error);
+        return [];
+    }
 }
 
 /**
@@ -524,6 +679,18 @@ async function createBattleOnChain(direction, stakeAmount) {
         hideLoading();
         showNotification(`Battle created! ID: ${battleId}`, 'success');
         
+        // Save battle session (Wave 2)
+        saveBattleSession({
+            id: battleId,
+            creator: walletState.address,
+            direction: direction,
+            stakeAmount: stakeAmount,
+            status: 'CREATED',
+            txHash: receipt.transactionHash,
+            asset: 'BTC', // TODO: Get from battle creation params
+            startTime: Date.now()
+        });
+        
         // Refresh balances after transaction
         refreshBalances();
         
@@ -560,6 +727,27 @@ async function joinBattleOnChain(battleId, direction) {
         
         hideLoading();
         showNotification('Successfully joined battle!', 'success');
+        
+        // Update battle session (Wave 2)
+        const existingBattle = getBattleSession(battleId);
+        if (existingBattle) {
+            saveBattleSession({
+                ...existingBattle,
+                opponent: walletState.address,
+                status: 'ACTIVE',
+                joinedAt: Date.now()
+            });
+        } else {
+            // Save new session if not found
+            saveBattleSession({
+                id: battleId,
+                opponent: walletState.address,
+                direction: direction,
+                status: 'ACTIVE',
+                txHash: receipt.transactionHash,
+                joinedAt: Date.now()
+            });
+        }
         
         // Refresh balances after transaction
         refreshBalances();
@@ -621,6 +809,28 @@ if (window.ethereum) {
     });
 }
 
+/**
+ * Restore active battles from localStorage
+ */
+function restoreActiveBattles() {
+    const activeBattles = loadBattleSessions();
+    
+    if (activeBattles.length === 0) {
+        console.log('No active battles to restore');
+        return;
+    }
+    
+    console.log(`🔄 Restoring ${activeBattles.length} active battles...`);
+    
+    // Display restored battles in UI
+    activeBattles.forEach(battle => {
+        console.log(`  - Battle ${battle.id}: ${battle.asset} (${battle.status})`);
+        // TODO: Update UI to show restored battles
+    });
+    
+    showNotification(`${activeBattles.length} active battle(s) restored`, 'info');
+}
+
 // Initialize on page load with auto-reconnect (Wave 2)
 window.addEventListener('load', async () => {
     // Initialize Web3 provider if available
@@ -629,7 +839,12 @@ window.addEventListener('load', async () => {
         setupEventListeners();
         
         // Attempt auto-reconnect if user was previously connected
-        await attemptAutoReconnect();
+        const reconnected = await attemptAutoReconnect();
+        
+        // Restore active battles if wallet reconnected
+        if (reconnected) {
+            restoreActiveBattles();
+        }
     }
     
     // Setup UI event listeners
@@ -663,4 +878,13 @@ window.formatAddress = formatAddress;
 window.formatBalance = formatBalance;
 window.validateAddress = validateAddress;
 window.showNetworkWarning = showNetworkWarning;
+// Battle session management (Wave 2)
+window.saveBattleSession = saveBattleSession;
+window.loadBattleSessions = loadBattleSessions;
+window.removeBattleSession = removeBattleSession;
+window.getBattleSession = getBattleSession;
+window.clearAllBattleSessions = clearAllBattleSessions;
+window.moveBattleToHistory = moveBattleToHistory;
+window.loadBattleHistory = loadBattleHistory;
+window.restoreActiveBattles = restoreActiveBattles;
 window.hideNetworkWarning = hideNetworkWarning;
