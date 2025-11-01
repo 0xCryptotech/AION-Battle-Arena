@@ -461,6 +461,197 @@ function resetPlayerStats(address) {
     }
 }
 
+// ============================================
+// LEADERBOARD SYSTEM (Wave 2)
+// ============================================
+
+/**
+ * Get all players from stats
+ * @returns {Array} Array of all player stats
+ */
+function getAllPlayers() {
+    try {
+        const statsStr = localStorage.getItem(STORAGE_KEYS.USER_STATS);
+        if (!statsStr) {
+            return [];
+        }
+        
+        const allStats = JSON.parse(statsStr);
+        return Object.values(allStats);
+    } catch (error) {
+        console.error('Error getting all players:', error);
+        return [];
+    }
+}
+
+/**
+ * Generate leaderboard rankings
+ * @param {string} sortBy - Sort criteria ('earnings', 'winRate', 'wins', 'battles')
+ * @param {number} limit - Number of players to return (default 100)
+ * @returns {Array} Sorted array of players with rankings
+ */
+function generateLeaderboard(sortBy = 'netProfit', limit = 100) {
+    try {
+        const players = getAllPlayers();
+        
+        if (players.length === 0) {
+            return [];
+        }
+        
+        // Sort players based on criteria
+        let sortedPlayers = [...players];
+        
+        switch (sortBy) {
+            case 'netProfit':
+                sortedPlayers.sort((a, b) => b.netProfit - a.netProfit);
+                break;
+            case 'winRate':
+                sortedPlayers.sort((a, b) => {
+                    // Secondary sort by total battles if win rates are equal
+                    if (b.winRate === a.winRate) {
+                        return b.totalBattles - a.totalBattles;
+                    }
+                    return b.winRate - a.winRate;
+                });
+                break;
+            case 'wins':
+                sortedPlayers.sort((a, b) => b.wins - a.wins);
+                break;
+            case 'battles':
+                sortedPlayers.sort((a, b) => b.totalBattles - a.totalBattles);
+                break;
+            case 'earnings':
+                sortedPlayers.sort((a, b) => b.totalEarnings - a.totalEarnings);
+                break;
+            default:
+                sortedPlayers.sort((a, b) => b.netProfit - a.netProfit);
+        }
+        
+        // Add rankings
+        const rankedPlayers = sortedPlayers.slice(0, limit).map((player, index) => ({
+            ...player,
+            rank: index + 1
+        }));
+        
+        console.log(`✅ Leaderboard generated: ${rankedPlayers.length} players (sorted by ${sortBy})`);
+        return rankedPlayers;
+    } catch (error) {
+        console.error('Error generating leaderboard:', error);
+        return [];
+    }
+}
+
+/**
+ * Get player rank on leaderboard
+ * @param {string} address - Player wallet address
+ * @param {string} sortBy - Sort criteria
+ * @returns {Object} Player rank info
+ */
+function getPlayerRank(address, sortBy = 'netProfit') {
+    try {
+        const leaderboard = generateLeaderboard(sortBy, 1000); // Get more players for accurate ranking
+        const playerIndex = leaderboard.findIndex(p => p.address.toLowerCase() === address.toLowerCase());
+        
+        if (playerIndex === -1) {
+            return {
+                rank: null,
+                totalPlayers: leaderboard.length,
+                percentile: null
+            };
+        }
+        
+        const rank = playerIndex + 1;
+        const percentile = ((leaderboard.length - rank) / leaderboard.length) * 100;
+        
+        return {
+            rank: rank,
+            totalPlayers: leaderboard.length,
+            percentile: percentile.toFixed(1)
+        };
+    } catch (error) {
+        console.error('Error getting player rank:', error);
+        return null;
+    }
+}
+
+/**
+ * Get top players
+ * @param {number} count - Number of top players to return
+ * @param {string} sortBy - Sort criteria
+ * @returns {Array} Top players
+ */
+function getTopPlayers(count = 10, sortBy = 'netProfit') {
+    return generateLeaderboard(sortBy, count);
+}
+
+/**
+ * Get leaderboard for specific time period
+ * @param {string} period - 'daily', 'weekly', 'monthly', 'allTime'
+ * @param {string} sortBy - Sort criteria
+ * @param {number} limit - Number of players
+ * @returns {Array} Filtered leaderboard
+ */
+function getLeaderboardByPeriod(period = 'allTime', sortBy = 'netProfit', limit = 100) {
+    try {
+        const players = getAllPlayers();
+        const now = Date.now();
+        let cutoffTime;
+        
+        switch (period) {
+            case 'daily':
+                cutoffTime = now - (24 * 60 * 60 * 1000); // 24 hours
+                break;
+            case 'weekly':
+                cutoffTime = now - (7 * 24 * 60 * 60 * 1000); // 7 days
+                break;
+            case 'monthly':
+                cutoffTime = now - (30 * 24 * 60 * 60 * 1000); // 30 days
+                break;
+            case 'allTime':
+            default:
+                cutoffTime = 0;
+        }
+        
+        // Filter players by time period
+        const filteredPlayers = players.filter(player => {
+            return player.lastUpdated >= cutoffTime;
+        });
+        
+        // Generate leaderboard from filtered players
+        const sortedPlayers = [...filteredPlayers];
+        
+        switch (sortBy) {
+            case 'netProfit':
+                sortedPlayers.sort((a, b) => b.netProfit - a.netProfit);
+                break;
+            case 'winRate':
+                sortedPlayers.sort((a, b) => {
+                    if (b.winRate === a.winRate) {
+                        return b.totalBattles - a.totalBattles;
+                    }
+                    return b.winRate - a.winRate;
+                });
+                break;
+            case 'wins':
+                sortedPlayers.sort((a, b) => b.wins - a.wins);
+                break;
+            default:
+                sortedPlayers.sort((a, b) => b.netProfit - a.netProfit);
+        }
+        
+        const rankedPlayers = sortedPlayers.slice(0, limit).map((player, index) => ({
+            ...player,
+            rank: index + 1
+        }));
+        
+        console.log(`✅ ${period} leaderboard: ${rankedPlayers.length} players`);
+        return rankedPlayers;
+    } catch (error) {
+        console.error('Error getting leaderboard by period:', error);
+        return [];
+    }
+}
+
 /**
  * Attempt to auto-reconnect wallet on page load
  * @returns {Promise<boolean>} True if reconnection successful
@@ -1070,4 +1261,10 @@ window.savePlayerStats = savePlayerStats;
 window.updatePlayerStats = updatePlayerStats;
 window.getPlayerStats = getPlayerStats;
 window.resetPlayerStats = resetPlayerStats;
+// Leaderboard system (Wave 2)
+window.getAllPlayers = getAllPlayers;
+window.generateLeaderboard = generateLeaderboard;
+window.getPlayerRank = getPlayerRank;
+window.getTopPlayers = getTopPlayers;
+window.getLeaderboardByPeriod = getLeaderboardByPeriod;
 window.hideNetworkWarning = hideNetworkWarning;
