@@ -1,4 +1,4 @@
-# Implementation Plan - Gelombang 4: Wallet & Blockchain Integration
+# Implementation Plan - Wave 1: Wallet & Blockchain Integration
 
 ## Task List
 

@@ -1,4 +1,4 @@
-# Design Document - Gelombang 4: Wallet & Blockchain Integration
+# Design Document - Wave 1: Wallet & Blockchain Integration
 
 ## Overview
 
@@ -326,7 +326,7 @@ if (window.ethereum) {
 - Implement exponential backoff for failed requests
 - Show loading states during RPC calls
 
-## Future Enhancements (Not in Gelombang 4)
+## Future Enhancements (Not in Wave 1)
 - Multi-wallet support (Coinbase Wallet, Trust Wallet)
 - ENS name resolution
 - Transaction history

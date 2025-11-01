@@ -1,4 +1,4 @@
-# Requirements Document - Gelombang 4: Wallet & Blockchain Integration
+# Requirements Document - Wave 1: Wallet & Blockchain Integration
 
 ## Introduction
 

@@ -14,7 +14,7 @@ A decentralized battle arena platform built on Polygon blockchain where users ca
 
 ## ✨ Features
 
-### 🔗 Wallet Integration (Gelombang 4)
+### 🔗 Wallet Integration
 - **MetaMask Connection**: Seamless wallet connection with modal UI
 - **Network Detection**: Automatic detection and switching to Polygon network
 - **Balance Display**: Real-time MATIC and AION token balance tracking
@@ -212,7 +212,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🗺️ Roadmap
 
-- [x] Wallet integration (Gelombang 4)
+- [x] Wallet integration
 - [x] Live price feeds
 - [x] Three battle modes
 - [ ] Smart contract deployment

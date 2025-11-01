@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers testing for all implemented features in Gelombang 4 (Wave 1) and Wave 2.
+This guide covers testing for all implemented features in Wave 1 and Wave 2.
 
 ---
 
@@ -26,7 +26,7 @@ python3 -m http.server 8000
 
 ## 📋 Testing Checklist
 
-### ✅ Gelombang 4: Wallet Integration
+### ✅ Wave 1: Wallet Integration
 
 #### Test 1.1: Wallet Connection
 **Steps:**

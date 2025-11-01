@@ -49,3 +49,4 @@ __pycache__/
 
 # Kiro (internal IDE files - not needed in repository)
 .kiro/
+.vercel
