@@ -1,0 +1,17 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Circle -->
+  <circle cx="100" cy="100" r="85" stroke="white" stroke-width="10" fill="none" stroke-dasharray="15 8"/>
+  
+  <!-- Inner A Symbol -->
+  <g transform="translate(100, 100)">
+    <!-- Left side of A -->
+    <path d="M -35 35 L 0 -40 L 0 -40" stroke="white" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Right side of A -->
+    <path d="M 0 -40 L 35 35" stroke="white" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Horizontal bar of A -->
+    <line x1="-20" y1="5" x2="20" y2="5" stroke="white" stroke-width="14" stroke-linecap="round"/>
+    
+    <!-- Arrow/Chevron pointing right -->
+    <path d="M 15 -15 L 40 0 L 15 15" stroke="white" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

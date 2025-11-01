@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262.1 83.3% 57.8%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 262.1 83.3% 57.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Aura Mode Styles */
+@layer components {
+  .bg-aura {
+    background: linear-gradient(180deg, #0e001b 0%, #1a0040 50%, #29005e 100%);
+  }
+  
+  .aura-dynamic {
+    background: linear-gradient(135deg, #3E2D7D, #1A093E, #2E1E63, #3E2D7D, #1A093E);
+    background-size: 300% 300%;
+    animation: aura-gradient-move 18s ease infinite;
+  }
+  
+  .aura-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+  }
+  
+  .aura-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(78, 255, 161, 0.3);
+    box-shadow: 0 6px 30px rgba(78, 255, 161, 0.12);
+    transform: translateY(-2px);
+    transition: all 0.25s ease;
+  }
+  
+  .neon {
+    color: #4effa1;
+    text-shadow: 0 0 12px rgba(78, 255, 161, 0.25);
+  }
+  
+  .btn-aura {
+    background-image: linear-gradient(90deg, #7b3fe4 0%, #4c6ef5 100%);
+    color: white;
+    box-shadow: 0 8px 30px rgba(123, 63, 228, 0.18);
+  }
+  
+  .btn-aura:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(123, 63, 228, 0.26);
+    transition: all 0.25s ease;
+  }
+  
+  .glass-card {
+    background: rgba(27, 10, 48, 0.65);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .glass-card:hover {
+    box-shadow: 0 0 30px rgba(157, 92, 255, 0.4);
+    border: 1px solid rgba(157, 92, 255, 0.4);
+    transform: translateY(-2px);
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "aion-prediction-market",
+  "version": "1.0.0",
+  "description": "AION Decentralized AI Prediction Market on Polygon",
+  "scripts": {
+    "preview:colors": "node scripts/preview-colors.js",
+    "replace:colors": "node scripts/replace-colors.js",
+    "rollback:colors": "node scripts/rollback-colors.js",
+    "setup": "npm install && cd frontend && npm install && cd ../backend && pip install -r requirements.txt && cd ../aion-contracts && npm install",
+    "start:static": "cd aion-static && python3 -m http.server 3002",
+    "start:frontend": "cd frontend && npm start",
+    "start:backend": "cd backend && source venv/bin/activate && uvicorn server:app --reload --port 8001",
+    "deploy:contract": "cd aion-contracts && npm run deploy:amoy:full"
+  },
+  "keywords": [
+    "blockchain",
+    "polygon",
+    "prediction-market",
+    "ai",
+    "web3",
+    "defi"
+  ],
+  "author": "AION Team",
+  "license": "MIT"
+}
