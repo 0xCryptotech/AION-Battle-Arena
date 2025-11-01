@@ -8,7 +8,7 @@ A decentralized battle arena platform built on Polygon blockchain where users ca
 
 ## 🌐 Live Demo
 
-**🚀 Production**: [https://aion-prediction-market-master.vercel.app](https://aion-prediction-market-master.vercel.app)
+**🚀 Production**: [https://aion-battle-arena.vercel.app](https://aion-battle-arena.vercel.app)
 
 > **Note**: Make sure you have MetaMask installed and connected to Polygon Amoy Testnet to interact with the platform.
 
