@@ -6,6 +6,12 @@ A decentralized battle arena platform built on Polygon blockchain where users ca
 ![Web3](https://img.shields.io/badge/Web3-Enabled-00D4AA)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
+## 🌐 Live Demo
+
+**🚀 Production**: [https://aion-prediction-market-master.vercel.app](https://aion-prediction-market-master.vercel.app)
+
+> **Note**: Make sure you have MetaMask installed and connected to Polygon Amoy Testnet to interact with the platform.
+
 ## ✨ Features
 
 ### 🔗 Wallet Integration (Gelombang 4)
