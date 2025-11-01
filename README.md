@@ -145,11 +145,12 @@ aion-battle-arena/
 
 ## 🔐 Security Features
 
-- No automatic wallet connection
-- No state persistence (wallet disconnects on refresh)
-- Comprehensive error handling
-- User confirmation for all transactions
-- Network validation before transactions
+- No automatic wallet connection (user must manually connect)
+- Session-based connection (requires reconnection after page refresh for security)
+- Comprehensive error handling with user-friendly messages
+- User confirmation required for all blockchain transactions
+- Network validation before executing transactions
+- Real-time balance updates after transactions
 
 ## 🧪 Testing
 
