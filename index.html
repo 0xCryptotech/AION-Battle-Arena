@@ -3177,19 +3177,37 @@
 
         // Fetch price from Pyth Network
         async function fetchPythPrice(pythId) {
+            if (!pythId) {
+                console.warn('fetchPythPrice: No pythId provided');
+                return null;
+            }
+            
             try {
-                const response = await fetch(`${PYTH_ENDPOINT}/api/latest_price_feeds?ids[]=${pythId}`);
+                console.log(`Fetching price for pythId: ${pythId}`);
+                const url = `${PYTH_ENDPOINT}/api/latest_price_feeds?ids[]=${pythId}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    console.error(`Pyth API error: ${response.status} ${response.statusText}`);
+                    return null;
+                }
+                
                 const data = await response.json();
+                console.log('Pyth API response:', data);
 
                 if (data && data.length > 0) {
                     const priceData = data[0];
                     const price = parseFloat(priceData.price.price) * Math.pow(10, priceData.price.expo);
+                    console.log(`✅ Pyth price fetched: $${price.toFixed(2)}`);
                     return price;
+                } else {
+                    console.warn('Pyth API returned empty data');
+                    return null;
                 }
             } catch (error) {
                 console.error('Error fetching Pyth price:', error);
+                return null;
             }
-            return null;
         }
 
         async function updateLivePrice(type) {
@@ -3259,8 +3277,15 @@
         window.updateLivePrice = updateLivePrice;
 
         function startLivePriceAnimation(type) {
-            if (priceInterval) clearInterval(priceInterval);
-            priceInterval = setInterval(() => updateLivePrice(type), 2000);
+            console.log(`🔄 Starting live price animation for: ${type}`);
+            if (priceInterval) {
+                clearInterval(priceInterval);
+                console.log('Cleared previous price interval');
+            }
+            priceInterval = setInterval(() => {
+                console.log(`⏰ Price update tick for: ${type}`);
+                updateLivePrice(type);
+            }, 2000);
         }
 
         // Dashboard Live Prices Update
