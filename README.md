@@ -62,12 +62,7 @@ git clone https://github.com/YOUR_USERNAME/aion-battle-arena.git
 cd aion-battle-arena
 ```
 
-2. **Navigate to project directory**
-```bash
-cd "AION Battle Arena"
-```
-
-3. **Start local server**
+2. **Start local server**
 
 Using Python:
 ```bash
@@ -79,7 +74,7 @@ Or using Node.js:
 npx live-server
 ```
 
-4. **Open in browser**
+3. **Open in browser**
 ```
 http://localhost:8000
 ```
@@ -132,13 +127,19 @@ The project uses the following network configurations:
 ## 📁 Project Structure
 
 ```
-AION Battle Arena/
+aion-battle-arena/
 ├── index.html              # Main application file
 ├── js/
 │   ├── polygon-integration.js  # Wallet & blockchain integration
 │   └── theme.js            # Theme management
 ├── images/
 │   └── aion-logo.svg       # Project logo
+├── config/
+│   ├── contract.js         # Smart contract config
+│   └── network.js          # Network configuration
+├── docs/
+│   └── specs/              # Project specifications
+├── vercel.json             # Vercel deployment config
 └── README.md               # This file
 ```
 
