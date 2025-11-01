@@ -1132,24 +1132,137 @@ async function joinBattleOnChain(battleId, direction) {
 }
 
 // Show Notification
-function showNotification(message, type = 'info') {
+// ============================================
+// ENHANCED TOAST NOTIFICATION SYSTEM (Wave 2)
+// ============================================
+
+let toastQueue = [];
+let maxToasts = 3;
+
+/**
+ * Enhanced toast notification with icons and actions
+ * @param {string} message - Notification message
+ * @param {string} type - Type: 'success', 'error', 'warning', 'info'
+ * @param {Object} options - Additional options
+ */
+function showNotification(message, type = 'info', options = {}) {
+    const {
+        duration = 5000,
+        dismissible = true,
+        action = null,
+        icon = null
+    } = options;
+    
     // Create notification element
     const notification = document.createElement('div');
-    notification.className = `fixed top-20 right-4 z-50 px-6 py-3 rounded-lg shadow-lg animate-slide-in ${
-        type === 'success' ? 'bg-green-600' :
-        type === 'error' ? 'bg-red-600' :
-        type === 'warning' ? 'bg-yellow-600' :
-        'bg-blue-600'
-    } text-white`;
-    notification.textContent = message;
+    const toastId = `toast-${Date.now()}`;
+    notification.id = toastId;
+    
+    // Determine colors and icons
+    const typeConfig = {
+        success: {
+            bg: 'bg-green-600',
+            icon: icon || '✓',
+            border: 'border-green-500'
+        },
+        error: {
+            bg: 'bg-red-600',
+            icon: icon || '✕',
+            border: 'border-red-500'
+        },
+        warning: {
+            bg: 'bg-yellow-600',
+            icon: icon || '⚠',
+            border: 'border-yellow-500'
+        },
+        info: {
+            bg: 'bg-blue-600',
+            icon: icon || 'ℹ',
+            border: 'border-blue-500'
+        }
+    };
+    
+    const config = typeConfig[type] || typeConfig.info;
+    
+    notification.className = `fixed right-4 z-50 px-4 py-3 rounded-lg shadow-2xl border-l-4 ${config.bg} ${config.border} text-white flex items-center gap-3 min-w-[300px] max-w-[400px] animate-slide-in`;
+    
+    // Build notification content
+    notification.innerHTML = `
+        <div class="flex-shrink-0 text-xl font-bold">${config.icon}</div>
+        <div class="flex-1 text-sm font-medium">${message}</div>
+        ${dismissible ? '<button onclick="window.dismissToast(\'' + toastId + '\')" class="flex-shrink-0 text-white hover:text-gray-200 font-bold text-lg">×</button>' : ''}
+    `;
+    
+    // Position toast based on queue
+    const topPosition = 80 + (toastQueue.length * 80);
+    notification.style.top = `${topPosition}px`;
     
     document.body.appendChild(notification);
+    toastQueue.push(toastId);
     
-    // Remove after 5 seconds
+    // Remove old toasts if exceeding max
+    if (toastQueue.length > maxToasts) {
+        const oldToastId = toastQueue.shift();
+        const oldToast = document.getElementById(oldToastId);
+        if (oldToast) {
+            dismissToast(oldToastId);
+        }
+    }
+    
+    // Auto-dismiss after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            dismissToast(toastId);
+        }, duration);
+    }
+    
+    return toastId;
+}
+
+/**
+ * Dismiss specific toast
+ * @param {string} toastId - Toast ID to dismiss
+ */
+function dismissToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (!toast) return;
+    
+    toast.classList.remove('animate-slide-in');
+    toast.classList.add('animate-slide-out');
+    
     setTimeout(() => {
-        notification.classList.add('animate-slide-out');
-        setTimeout(() => notification.remove(), 300);
-    }, 5000);
+        toast.remove();
+        toastQueue = toastQueue.filter(id => id !== toastId);
+        
+        // Reposition remaining toasts
+        repositionToasts();
+    }, 300);
+}
+
+/**
+ * Reposition all active toasts
+ */
+function repositionToasts() {
+    toastQueue.forEach((toastId, index) => {
+        const toast = document.getElementById(toastId);
+        if (toast) {
+            const topPosition = 80 + (index * 80);
+            toast.style.top = `${topPosition}px`;
+        }
+    });
+}
+
+/**
+ * Clear all toasts
+ */
+function clearAllToasts() {
+    toastQueue.forEach(toastId => {
+        const toast = document.getElementById(toastId);
+        if (toast) {
+            toast.remove();
+        }
+    });
+    toastQueue = [];
 }
 
 // Listen for account changes
@@ -1267,4 +1380,8 @@ window.generateLeaderboard = generateLeaderboard;
 window.getPlayerRank = getPlayerRank;
 window.getTopPlayers = getTopPlayers;
 window.getLeaderboardByPeriod = getLeaderboardByPeriod;
+// Enhanced toast notifications (Wave 2)
+window.showNotification = showNotification;
+window.dismissToast = dismissToast;
+window.clearAllToasts = clearAllToasts;
 window.hideNetworkWarning = hideNetworkWarning;
