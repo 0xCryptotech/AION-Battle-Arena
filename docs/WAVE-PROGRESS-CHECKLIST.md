@@ -29,7 +29,7 @@
   - [x] Registrasi pemain (via battle creation)
   - [x] Pencatatan pertandingan (Battle struct & mapping)
   - [x] Penentuan hasil (completeBattle function)
-- [ ] Deploy ke Polygon Amoy testnet (Ready - needs PRIVATE_KEY in .env)
+- [x] Deploy ke Polygon Amoy testnet ✅ (0xC4F95BA0038200F2B92043D43f170F895e813C04)
 - [x] Lakukan unit testing untuk validasi fungsi battle logic (19 tests passing ✅)
 
 ### 🎨 Basic UI/UX (Arena Interface)

@@ -11,6 +11,22 @@
     <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
     <!-- Pyth Network SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@pythnetwork/pyth-evm-js@1.0.0/lib/index.iife.min.js"></script>
+    <style>
+        @keyframes slide-in {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slide-out {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        .animate-slide-in { animation: slide-in 0.3s ease-out; }
+        .animate-slide-out { animation: slide-out 0.3s ease-in; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
 </head>
 
 <body class="bg-white min-h-screen font-sans">
@@ -2394,9 +2410,15 @@
         </div>
     </main>
 
+    <!-- Load Polygon Integration -->
+    <script src="js/polygon-integration.js"></script>
+    
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
+        
+        // Expose dismissToast globally for toast notifications
+        window.dismissToast = dismissToast;
 
         // Typing animation
         const typingText = document.getElementById('typing-text');

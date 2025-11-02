@@ -15,9 +15,9 @@ const POLYGON_AMOY = {
     blockExplorerUrls: ['https://amoy.polygonscan.com']
 };
 
-// Contract Configuration - UPDATE AFTER DEPLOYMENT
-const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000'; // TODO: Update after deploy
-const CONTRACT_ABI = []; // TODO: Update with full ABI after compile
+// Contract Configuration - DEPLOYED ON POLYGON AMOY
+const CONTRACT_ADDRESS = '0xC4F95BA0038200F2B92043D43f170F895e813C04'; // Deployed Nov 2, 2025
+const CONTRACT_ABI = [{"type":"constructor","stateMutability":"undefined","payable":false,"inputs":[]},{"type":"error","name":"ERC20InsufficientAllowance","inputs":[{"type":"address","name":"spender"},{"type":"uint256","name":"allowance"},{"type":"uint256","name":"needed"}]},{"type":"error","name":"ERC20InsufficientBalance","inputs":[{"type":"address","name":"sender"},{"type":"uint256","name":"balance"},{"type":"uint256","name":"needed"}]},{"type":"error","name":"ERC20InvalidApprover","inputs":[{"type":"address","name":"approver"}]},{"type":"error","name":"ERC20InvalidReceiver","inputs":[{"type":"address","name":"receiver"}]},{"type":"error","name":"ERC20InvalidSender","inputs":[{"type":"address","name":"sender"}]},{"type":"error","name":"ERC20InvalidSpender","inputs":[{"type":"address","name":"spender"}]},{"type":"error","name":"OwnableInvalidOwner","inputs":[{"type":"address","name":"owner"}]},{"type":"error","name":"OwnableUnauthorizedAccount","inputs":[{"type":"address","name":"account"}]},{"type":"error","name":"ReentrancyGuardReentrantCall","inputs":[]},{"type":"event","anonymous":false,"name":"Approval","inputs":[{"type":"address","name":"owner","indexed":true},{"type":"address","name":"spender","indexed":true},{"type":"uint256","name":"value","indexed":false}]},{"type":"event","anonymous":false,"name":"BattleCompleted","inputs":[{"type":"uint256","name":"id","indexed":true},{"type":"address","name":"winner","indexed":false}]},{"type":"event","anonymous":false,"name":"BattleCreated","inputs":[{"type":"uint256","name":"id","indexed":true},{"type":"address","name":"player1","indexed":false},{"type":"string","name":"direction","indexed":false},{"type":"uint256","name":"stakeAmount","indexed":false}]},{"type":"event","anonymous":false,"name":"BattleJoined","inputs":[{"type":"uint256","name":"id","indexed":true},{"type":"address","name":"player2","indexed":false},{"type":"string","name":"direction","indexed":false}]},{"type":"event","anonymous":false,"name":"MarketCreated","inputs":[{"type":"uint256","name":"marketId","indexed":true},{"type":"string","name":"title","indexed":false},{"type":"address","name":"creator","indexed":false}]},{"type":"event","anonymous":false,"name":"MarketResolved","inputs":[{"type":"uint256","name":"marketId","indexed":true},{"type":"bool","name":"outcome","indexed":false}]},{"type":"event","anonymous":false,"name":"OwnershipTransferred","inputs":[{"type":"address","name":"previousOwner","indexed":true},{"type":"address","name":"newOwner","indexed":true}]},{"type":"event","anonymous":false,"name":"RewardClaimed","inputs":[{"type":"uint256","name":"marketId","indexed":true},{"type":"address","name":"staker","indexed":true},{"type":"uint256","name":"reward","indexed":false}]},{"type":"event","anonymous":false,"name":"StakePlaced","inputs":[{"type":"uint256","name":"marketId","indexed":true},{"type":"address","name":"staker","indexed":true},{"type":"uint256","name":"amount","indexed":false},{"type":"bool","name":"prediction","indexed":false}]},{"type":"event","anonymous":false,"name":"Transfer","inputs":[{"type":"address","name":"from","indexed":true},{"type":"address","name":"to","indexed":true},{"type":"uint256","name":"value","indexed":false}]},{"type":"function","name":"PLATFORM_FEE","constant":true,"stateMutability":"view","payable":false,"inputs":[],"outputs":[{"type":"uint256","name":""}]},{"type":"function","name":"aiModelReputation","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"address","name":""}],"outputs":[{"type":"uint256","name":""}]},{"type":"function","name":"allowance","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"address","name":"owner"},{"type":"address","name":"spender"}],"outputs":[{"type":"uint256","name":""}]},{"type":"function","name":"approve","constant":false,"payable":false,"inputs":[{"type":"address","name":"spender"},{"type":"uint256","name":"value"}],"outputs":[{"type":"bool","name":""}]},{"type":"function","name":"balanceOf","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"address","name":"account"}],"outputs":[{"type":"uint256","name":""}]},{"type":"function","name":"battleCount","constant":true,"stateMutability":"view","payable":false,"inputs":[],"outputs":[{"type":"uint256","name":""}]},{"type":"function","name":"battles","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"uint256","name":""}],"outputs":[{"type":"address","name":"player1"},{"type":"address","name":"player2"},{"type":"string","name":"player1Direction"},{"type":"string","name":"player2Direction"},{"type":"uint256","name":"stakeAmount"},{"type":"bool","name":"isComplete"},{"type":"address","name":"winner"}]},{"type":"function","name":"cancelBattle","constant":false,"payable":false,"inputs":[{"type":"uint256","name":"id"}],"outputs":[]},{"type":"function","name":"claimReward","constant":false,"payable":false,"inputs":[{"type":"uint256","name":"_marketId"}],"outputs":[]},{"type":"function","name":"completeBattle","constant":false,"payable":false,"inputs":[{"type":"uint256","name":"id"},{"type":"address","name":"winner"}],"outputs":[]},{"type":"function","name":"createBattle","constant":false,"payable":false,"inputs":[{"type":"string","name":"direction"},{"type":"uint256","name":"stakeAmount"}],"outputs":[]},{"type":"function","name":"createMarket","constant":false,"payable":false,"inputs":[{"type":"string","name":"_title"},{"type":"string","name":"_description"},{"type":"uint256","name":"_eventDate"}],"outputs":[{"type":"uint256","name":""}]},{"type":"function","name":"decimals","constant":true,"stateMutability":"view","payable":false,"inputs":[],"outputs":[{"type":"uint8","name":""}]},{"type":"function","name":"getBattle","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"uint256","name":"id"}],"outputs":[{"type":"address","name":"player1"},{"type":"address","name":"player2"},{"type":"string","name":"dir1"},{"type":"string","name":"dir2"},{"type":"uint256","name":"stakeAmount"},{"type":"bool","name":"complete"},{"type":"address","name":"winner"}]},{"type":"function","name":"getMarket","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"uint256","name":"_marketId"}],"outputs":[{"type":"tuple","name":"","components":[{"type":"uint256","name":"id"},{"type":"string","name":"title"},{"type":"string","name":"description"},{"type":"uint256","name":"eventDate"},{"type":"bool","name":"resolved"},{"type":"bool","name":"outcome"},{"type":"uint256","name":"totalStakeYes"},{"type":"uint256","name":"totalStakeNo"},{"type":"address","name":"creator"},{"type":"uint256","name":"createdAt"}]}]},{"type":"function","name":"getUserStake","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"uint256","name":"_marketId"},{"type":"address","name":"_user"}],"outputs":[{"type":"tuple","name":"","components":[{"type":"uint256","name":"amount"},{"type":"bool","name":"prediction"},{"type":"bool","name":"claimed"}]}]},{"type":"function","name":"joinBattle","constant":false,"payable":false,"inputs":[{"type":"uint256","name":"id"},{"type":"string","name":"direction"}],"outputs":[]},{"type":"function","name":"marketCounter","constant":true,"stateMutability":"view","payable":false,"inputs":[],"outputs":[{"type":"uint256","name":""}]},{"type":"function","name":"markets","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"uint256","name":""}],"outputs":[{"type":"uint256","name":"id"},{"type":"string","name":"title"},{"type":"string","name":"description"},{"type":"uint256","name":"eventDate"},{"type":"bool","name":"resolved"},{"type":"bool","name":"outcome"},{"type":"uint256","name":"totalStakeYes"},{"type":"uint256","name":"totalStakeNo"},{"type":"address","name":"creator"},{"type":"uint256","name":"createdAt"}]},{"type":"function","name":"mint","constant":false,"payable":false,"inputs":[{"type":"address","name":"to"},{"type":"uint256","name":"amount"}],"outputs":[]},{"type":"function","name":"name","constant":true,"stateMutability":"view","payable":false,"inputs":[],"outputs":[{"type":"string","name":""}]},{"type":"function","name":"owner","constant":true,"stateMutability":"view","payable":false,"inputs":[],"outputs":[{"type":"address","name":""}]},{"type":"function","name":"renounceOwnership","constant":false,"payable":false,"inputs":[],"outputs":[]},{"type":"function","name":"resolveMarket","constant":false,"payable":false,"inputs":[{"type":"uint256","name":"_marketId"},{"type":"bool","name":"_outcome"}],"outputs":[]},{"type":"function","name":"stake","constant":false,"payable":false,"inputs":[{"type":"uint256","name":"_marketId"},{"type":"uint256","name":"_amount"},{"type":"bool","name":"_prediction"}],"outputs":[]},{"type":"function","name":"stakes","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"uint256","name":""},{"type":"address","name":""}],"outputs":[{"type":"uint256","name":"amount"},{"type":"bool","name":"prediction"},{"type":"bool","name":"claimed"}]},{"type":"function","name":"symbol","constant":true,"stateMutability":"view","payable":false,"inputs":[],"outputs":[{"type":"string","name":""}]},{"type":"function","name":"totalSupply","constant":true,"stateMutability":"view","payable":false,"inputs":[],"outputs":[{"type":"uint256","name":""}]},{"type":"function","name":"transfer","constant":false,"payable":false,"inputs":[{"type":"address","name":"to"},{"type":"uint256","name":"value"}],"outputs":[{"type":"bool","name":""}]},{"type":"function","name":"transferFrom","constant":false,"payable":false,"inputs":[{"type":"address","name":"from"},{"type":"address","name":"to"},{"type":"uint256","name":"value"}],"outputs":[{"type":"bool","name":""}]},{"type":"function","name":"transferOwnership","constant":false,"payable":false,"inputs":[{"type":"address","name":"newOwner"}],"outputs":[]}]
 
 // Wallet State Management
 const walletState = {
@@ -1265,28 +1265,29 @@ function clearAllToasts() {
     toastQueue = [];
 }
 
-// Listen for account changes
-if (window.ethereum) {
-    window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length === 0) {
-            // User disconnected
-            isConnected = false;
-            userAddress = null;
-            updateWalletUI();
-            showNotification('Wallet disconnected', 'info');
-        } else {
-            // Account changed
-            userAddress = accounts[0];
-            updateWalletUI();
-            updateBalances();
-            showNotification('Account changed', 'info');
-        }
-    });
-    
-    window.ethereum.on('chainChanged', () => {
-        // Reload page on network change
-        window.location.reload();
-    });
+// Setup event listeners
+function setupEventListeners() {
+    if (window.ethereum) {
+        window.ethereum.on('accountsChanged', (accounts) => {
+            if (accounts.length === 0) {
+                disconnectWallet();
+            } else {
+                walletState.address = accounts[0];
+                userAddress = accounts[0];
+                updateWalletUI();
+                updateBalances();
+                showNotification('Account changed', 'info');
+            }
+        });
+        
+        window.ethereum.on('chainChanged', () => {
+            window.location.reload();
+        });
+    }
+}
+
+function setupUIEventListeners() {
+    // Add any additional UI event listeners here
 }
 
 /**
@@ -1330,6 +1331,44 @@ window.addEventListener('load', async () => {
     // Setup UI event listeners
     setupUIEventListeners();
 });
+
+// Missing utility functions
+function connectMetaMask() { return connectWallet(); }
+function switchToPolygon() { return switchToPolygonAmoy(); }
+function checkNetwork() {
+    if (!walletState.chainId) return false;
+    return walletState.chainId === POLYGON_AMOY.chainIdDecimal;
+}
+function getMaticBalance() { return walletState.balances.matic; }
+function getAionBalance() { return walletState.balances.aion; }
+function refreshBalances() { return updateBalances(); }
+function showWalletModal() { console.log('Wallet modal'); }
+function closeWalletModal() { console.log('Close wallet modal'); }
+function toggleWalletDropdown() { console.log('Toggle dropdown'); }
+function showComingSoon() { showNotification('Coming soon!', 'info'); }
+function handleWalletError(error) {
+    console.error('Wallet error:', error);
+    if (error.code === 4001) showNotification('User rejected request', 'warning');
+    else if (error.code === -32002) showNotification('Request pending in MetaMask', 'warning');
+    else showNotification('Wallet error: ' + error.message, 'error');
+}
+function showLoading(msg = 'Loading...') {
+    const loader = document.createElement('div');
+    loader.id = 'loading-overlay';
+    loader.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    loader.innerHTML = `<div class="bg-white p-6 rounded-lg"><div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div><p>${msg}</p></div>`;
+    document.body.appendChild(loader);
+}
+function hideLoading() {
+    const loader = document.getElementById('loading-overlay');
+    if (loader) loader.remove();
+}
+function showNetworkWarning() {
+    showNotification('Please switch to Polygon Amoy Testnet', 'warning');
+}
+function hideNetworkWarning() {
+    console.log('Network warning hidden');
+}
 
 // Export functions for global use
 window.connectWallet = connectWallet;
