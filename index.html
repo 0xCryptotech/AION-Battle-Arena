@@ -11,6 +11,10 @@
     <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
     <!-- Pyth Network SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@pythnetwork/pyth-evm-js@1.0.0/lib/index.iife.min.js"></script>
+    <!-- App JavaScript -->
+    <script src="js/app.js"></script>
+    <!-- Polygon Integration -->
+    <script src="js/polygon-integration.js"></script>
     <style>
         @keyframes slide-in {
             from { transform: translateX(100%); opacity: 0; }
@@ -298,6 +302,8 @@
                                     class="w-full bg-white/10 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm font-semibold">
                                     <option value="crypto">💰 Crypto</option>
                                     <option value="market">📈 Market</option>
+                                    <option value="esport">🎮 Esport</option>
+                                    <option value="social" disabled>🌐 Social (Coming Soon)</option>
                                 </select>
                             </div>
 
@@ -2461,17 +2467,6 @@
         // Load leaderboard when page opens
         document.addEventListener('DOMContentLoaded', function() {
             loadLeaderboard();
-            
-            // Load Polygon Integration after DOM is ready
-            const script = document.createElement('script');
-            script.src = 'js/polygon-integration.js';
-            script.onload = function() {
-                console.log('✅ Polygon integration loaded');
-            };
-            script.onerror = function() {
-                console.log('⚠️ Polygon integration failed to load');
-            };
-            document.head.appendChild(script);
         });
 
         // User Info functionality - Updated with real stats from Wave 2
@@ -2850,45 +2845,116 @@
 
         // Navigation functionality
         function showPage(pageId) {
-            // Hide all pages
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.add('hidden');
-            });
+            console.log('Navigating to page:', pageId);
+            
+            try {
+                // Hide all pages
+                document.querySelectorAll('.page').forEach(page => {
+                    page.classList.add('hidden');
+                });
 
-            // Show selected page
-            document.getElementById(pageId).classList.remove('hidden');
-
-            // Update desktop navigation buttons
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Update mobile navigation buttons
-            document.querySelectorAll('.nav-btn-mobile').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Activate current button (desktop)
-            if (event && event.target) {
-                const btn = event.target.closest('.nav-btn') || event.target.closest('.nav-btn-mobile');
-                if (btn) {
-                    btn.classList.add('active');
+                // Show selected page
+                const targetPage = document.getElementById(pageId);
+                if (targetPage) {
+                    targetPage.classList.remove('hidden');
+                    console.log('Page shown:', pageId);
+                } else {
+                    console.error('Page not found:', pageId);
+                    showNotification('Page not found: ' + pageId, 'error');
+                    return;
                 }
-            }
 
-            // Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+                // Update desktop navigation buttons
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Update mobile navigation buttons
+                document.querySelectorAll('.nav-btn-mobile').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Find and activate the correct navigation button
+                const navButtons = document.querySelectorAll('.nav-btn, .nav-btn-mobile');
+                navButtons.forEach(btn => {
+                    const onclick = btn.getAttribute('onclick');
+                    if (onclick && onclick.includes(`showPage('${pageId}')`)) {
+                        btn.classList.add('active');
+                    }
+                });
+
+                // Close mobile menu if open
+                const mobileMenu = document.getElementById('mobileMenu');
+                if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.add('hidden');
+                }
+
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                // Update user info if on userinfo page
+                if (pageId === 'userinfo') {
+                    updateUserInfo();
+                }
+                
+                showNotification(`Navigated to ${pageId}`, 'success');
+                
+            } catch (error) {
+                console.error('Error in showPage:', error);
+                showNotification('Navigation error: ' + error.message, 'error');
+            }
         }
 
-        // Set initial active state
-        document.querySelector('.nav-btn.active')?.classList.add('text-white');
-        document.querySelectorAll('.nav-btn:not(.active)').forEach(btn => {
-            btn.classList.add('text-white');
+        // Set initial active state and add click handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial navigation state
+            document.querySelector('.nav-btn.active')?.classList.add('text-white');
+            document.querySelectorAll('.nav-btn:not(.active)').forEach(btn => {
+                btn.classList.add('text-white');
+            });
+
+            // Add click handlers to all navigation buttons
+            document.querySelectorAll('.nav-btn, .nav-btn-mobile').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const onclick = this.getAttribute('onclick');
+                    if (onclick) {
+                        try {
+                            eval(onclick);
+                        } catch (error) {
+                            console.error('Navigation error:', error);
+                        }
+                    }
+                });
+            });
+
+            // Add click handlers to other interactive elements
+            document.querySelectorAll('[onclick]').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    const onclick = this.getAttribute('onclick');
+                    if (onclick && !onclick.includes('showPage')) {
+                        try {
+                            eval(onclick);
+                        } catch (error) {
+                            console.error('Click handler error:', error);
+                        }
+                    }
+                });
+            });
         });
 
         // Marketplace Functions
         function filterMarket(category) {
-            alert(`Filtering by: ${category}`);
+            showNotification(`Filtering by: ${category}`, 'info');
+        }
+
+        // Dashboard functions
+        function updateDashboardPrediction() {
+            console.log('Updating dashboard prediction...');
+        }
+
+        function updateDashboardCategory() {
+            console.log('Updating dashboard category...');
         }
 
         function showItemDetail(itemId) {
@@ -2935,11 +3001,101 @@
 
         function buyItem(itemId) {
             if (!isConnected) {
-                alert('Please connect your wallet first!');
+                showNotification('Please connect your wallet first!', 'warning');
                 return;
             }
             closeModal();
-            alert('✅ Purchase successful! Item added to your inventory.');
+            showNotification('✅ Purchase successful! Item added to your inventory.', 'success');
+        }
+
+        function closeModal() {
+            const modal = document.querySelector('.fixed.inset-0');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function closeBattleModal() {
+            closeModal();
+        }
+
+        // Voting power update
+        function updateVotingPower() {
+            const votingPowerEl = document.getElementById('voting-power');
+            if (votingPowerEl && isConnected) {
+                // Simulate voting power based on wallet connection
+                votingPowerEl.textContent = Math.floor(Math.random() * 1000) + 100;
+            }
+        }
+
+        // Theme toggle function
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.querySelector('#themeToggle i');
+            
+            if (body.classList.contains('dark-theme')) {
+                body.classList.remove('dark-theme');
+                themeIcon.setAttribute('data-lucide', 'sun');
+            } else {
+                body.classList.add('dark-theme');
+                themeIcon.setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons();
+        }
+
+        // Proposal functions
+        function filterProposals() {
+            console.log('Filtering proposals...');
+        }
+
+        function openCreateProposal() {
+            showNotification('Create proposal feature coming soon!', 'info');
+        }
+
+        function showProposalDetail(id) {
+            showNotification(`Viewing proposal ${id} details`, 'info');
+        }
+
+        function voteProposal(id, vote) {
+            if (!isConnected) {
+                showNotification('Please connect your wallet first!', 'warning');
+                return;
+            }
+            showNotification(`Voted ${vote} on proposal ${id}`, 'success');
+        }
+
+        function showModelDetail(id) {
+            showNotification(`Viewing AI model ${id} details`, 'info');
+        }
+
+        // Battle functions
+        function startAIvAIBattle() {
+            showNotification('AI vs AI battle starting...', 'info');
+        }
+
+        function startAIvHumanBattle() {
+            if (!isConnected) {
+                showNotification('Please connect your wallet first!', 'warning');
+                return;
+            }
+            showNotification('AI vs Human battle starting...', 'info');
+        }
+
+        function startHumanvHumanBattle() {
+            if (!isConnected) {
+                showNotification('Please connect your wallet first!', 'warning');
+                return;
+            }
+            showNotification('Human vs Human battle starting...', 'info');
+        }
+
+        function startBattleWithBet() {
+            if (!isConnected) {
+                showNotification('Please connect your wallet first!', 'warning');
+                return;
+            }
+            showNotification('Battle starting with bet...', 'success');
+            closeBattleModal();
         }
 
 

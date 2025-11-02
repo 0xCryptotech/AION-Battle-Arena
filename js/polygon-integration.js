@@ -1020,22 +1020,32 @@ function isContractDeployed() {
 }
 
 // Create Battle
-async function createBattleOnChain(direction, stakeAmount) {
+async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
     if (!isContractDeployed()) {
         showNotification('Contract not deployed yet. Using demo mode.', 'warning');
         return { success: false, demo: true };
     }
     
     try {
-        showLoading('Creating battle...');
-        showNotification('Creating battle on Polygon...', 'info');
+        showLoading('Creating battle on-chain...');
+        showNotification('📝 Creating battle on Polygon Amoy...', 'info');
         
         const contract = await getContract();
         const amount = ethers.utils.parseEther(stakeAmount.toString());
         
+        // Approve AION tokens first
+        showLoading('Approving AION tokens...');
+        showNotification('💰 Approving AION tokens...', 'info');
+        const approveTx = await contract.approve(CONTRACT_ADDRESS, amount);
+        await approveTx.wait();
+        
+        // Create battle
+        showLoading('Creating battle...');
+        showNotification('⚔️ Creating battle...', 'info');
         const tx = await contract.createBattle(direction, amount);
+        
         showLoading('Waiting for confirmation...');
-        showNotification('Transaction submitted. Waiting for confirmation...', 'info');
+        showNotification('⏳ Waiting for blockchain confirmation...', 'info');
         
         const receipt = await tx.wait();
         
@@ -1044,9 +1054,9 @@ async function createBattleOnChain(direction, stakeAmount) {
         const battleId = event?.args?.id?.toString();
         
         hideLoading();
-        showNotification(`Battle created! ID: ${battleId}`, 'success');
+        showNotification(`✅ Battle created on-chain! ID: ${battleId}`, 'success');
         
-        // Save battle session (Wave 2)
+        // Save battle session
         saveBattleSession({
             id: battleId,
             creator: walletState.address,
@@ -1054,7 +1064,8 @@ async function createBattleOnChain(direction, stakeAmount) {
             stakeAmount: stakeAmount,
             status: 'CREATED',
             txHash: receipt.transactionHash,
-            asset: 'BTC', // TODO: Get from battle creation params
+            asset: asset,
+            timeframe: timeframe,
             startTime: Date.now()
         });
         
@@ -1069,6 +1080,37 @@ async function createBattleOnChain(direction, stakeAmount) {
     } catch (error) {
         hideLoading();
         console.error('Error creating battle:', error);
+        handleWalletError(error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Complete Battle On-Chain
+async function completeBattleOnChain(battleId, winner) {
+    if (!isContractDeployed()) {
+        return { success: false, demo: true };
+    }
+    
+    try {
+        showNotification('🏁 Completing battle on-chain...', 'info');
+        
+        const contract = await getContract();
+        const tx = await contract.completeBattle(battleId, winner);
+        
+        showNotification('⏳ Waiting for confirmation...', 'info');
+        const receipt = await tx.wait();
+        
+        showNotification('✅ Battle completed on-chain!', 'success');
+        
+        // Refresh balances
+        refreshBalances();
+        
+        return {
+            success: true,
+            txHash: receipt.transactionHash
+        };
+    } catch (error) {
+        console.error('Error completing battle:', error);
         handleWalletError(error);
         return { success: false, error: error.message };
     }
@@ -1389,6 +1431,7 @@ window.showLoading = showLoading;
 window.hideLoading = hideLoading;
 window.createBattleOnChain = createBattleOnChain;
 window.joinBattleOnChain = joinBattleOnChain;
+window.completeBattleOnChain = completeBattleOnChain;
 window.isWalletConnected = () => walletState.isConnected;
 window.getUserAddress = () => walletState.address;
 window.getWalletState = getWalletState;

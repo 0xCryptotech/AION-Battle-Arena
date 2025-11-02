@@ -1,0 +1,12 @@
+node_modules
+.git
+.env
+*.log
+.DS_Store
+backend
+aion-contracts
+frontend/node_modules
+frontend/build
+*.backup
+TROUBLESHOOTING.md
+PROJECT_PROGRESS.md
