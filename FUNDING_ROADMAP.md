@@ -6,93 +6,80 @@
 
 ## ⚙️ Foundation & Setup (Wave 1–2)
 
-**Goal**: Establish a strong technical foundation and validate early market interest.
+### Wave 1 — Foundation & Architecture (✅ 100%)
 
-### 🔹 Wave 1 – Foundation & Architecture
+**Focus**: Establish the technical backbone and deploy the first functional prototype.
 
-**Tasks:**
-- ✅ Set up full project architecture (frontend, backend, contracts)
-- ✅ Integrate Polygon Testnet (Amoy) for initial deployment
-- ✅ Implement wallet connection (MetaMask via ethers.js)
-- ✅ Deploy first version of smart contract (BattleArena.sol)
-- ✅ Launch first live version of the dApp on Vercel
+**Completed:**
+- Project architecture (frontend, backend, smart contracts)
+- Polygon integration (Amoy Testnet)
+- Wallet connection (MetaMask)
+- Smart contract deployment (BattleArena.sol)
+- Initial live deployment on Vercel
 
 **Outcome:**
-A functional on-chain prototype that demonstrates the technical capability of the team.
-
-**Status**: ✅ **100% Complete**
+A fully functional prototype proving AION Battle Arena's core on-chain gameplay and technical readiness.
 
 ---
 
-### 🔹 Wave 2 – Product-Market Fit Validation
+### Wave 2 — Product-Market Fit Validation (✅ 100%)
 
-**Tasks:**
-- ✅ Implement complete battle logic and reward flow
-- ✅ Add leaderboard and match history for player tracking
-- ✅ Enable wallet state persistence (auto reconnect)
-- ⏳ Conduct initial community testing and feedback loop
-- ⏳ Validate traction metrics and gameplay engagement
+**Focus**: Refine gameplay experience and validate early traction.
+
+**Progress:**
+- ✅ Battle logic and result mechanics
+- ✅ Player leaderboard and match history
+- ✅ Wallet state persistence (auto reconnect)
 
 **Outcome:**
-A stable MVP validated by early users and aligned with potential market demand.
-
-**Status**: ✅ **90% Complete** (testing & validation pending)
+A stable MVP nearly validated by early users, showing strong potential for market adoption.
 
 ---
 
 ## ⚔️ Build & Optimize (Wave 3–4)
 
-**Goal**: Expand product capabilities, grow user base, and refine the business model.
+### Wave 3 — Backend & Indexing Layer (⏳ 40%)
 
-### 🔹 Wave 3 – Backend & Indexing Layer
+**Focus**: Strengthen backend systems, data synchronization, and analytics.
 
-**Tasks:**
-- ⏳ Build backend adapter to sync smart contract data
-- ⏳ Implement indexer for on-chain events (battle results, rewards)
-- ⏳ Enable data persistence and analytics dashboard for developers
-- ✅ Optimize gameplay responsiveness and UX
-- ⏳ Conduct performance & security tests
+**Progress:**
+- ⚙️ Backend adapter and state sync in development
+- ⚙️ Smart contract event indexer setup
+- ⚙️ Analytics and dashboard integration planned
+- ⚙️ UX optimization and security audit pending
 
 **Outcome:**
-Reliable backend infrastructure and seamless interaction between frontend, blockchain, and data layers.
-
-**Status**: ⏳ **40% Complete** (UX optimized, backend pending)
+Reliable backend infrastructure under construction to enable data-driven gameplay and scalability.
 
 ---
 
-### 🔹 Wave 4 – User Growth & Business Model
+### Wave 4 — User Growth & Business Model (⏳ 50%)
 
-**Tasks:**
-- ✅ Launch reward system using $AION token (ERC-20)
-- ⏳ Add staking and leaderboard incentives
-- ⏳ Build user growth campaigns (Twitter / Discord quests)
-- ⏳ Test user acquisition funnels and retention strategies
-- ✅ Define sustainable revenue streams (entry fees, reward pools)
+**Focus**: Expand player base and define sustainable revenue streams.
+
+**Progress:**
+- ✅ Token economy model designed
+- ⚙️ $AION token (ERC-20) integration in testing
+- ⚙️ Staking and leaderboard incentives pending
+- ⚙️ Growth campaigns and community expansion planned
 
 **Outcome:**
-A growing player base with measurable engagement and a validated Web3 game economy.
-
-**Status**: ⏳ **50% Complete** (token & revenue model defined, growth campaigns pending)
+Business model defined, token system nearly ready, with user acquisition strategy in preparation.
 
 ---
 
-## 💰 Pitch & Raise (Wave 5)
+## 💰 Pitch & Raise (Wave 5 — ⏳ 30%)
 
-**Goal**: Showcase product success and execute the first fundraising round.
+**Focus**: Showcase results, engage investors, and close the first funding round.
 
-### 🔹 Wave 5 – Demo & Funding Execution
-
-**Tasks:**
-- ✅ Prepare live product demo for VC / ecosystem programs
-- ⏳ Finalize pitch deck with metrics, roadmap, and growth vision
-- ⏳ Conduct investor meetings and demo sessions
-- ⏳ Execute first funding round (seed / grant / incubation)
-- ⏳ Announce partnership roadmap and Phase 2 expansion plan
+**Progress:**
+- ⚙️ Live product demo ready
+- ⚙️ Pitch deck under preparation
+- ⚙️ Investor meeting pipeline forming
+- ⚙️ Due diligence phase upcoming
 
 **Outcome:**
 Secured initial funding and strategic partnerships to scale AION Battle Arena beyond MVP.
-
-**Status**: ⏳ **30% Complete** (demo ready, pitch materials pending)
 
 ---
 
