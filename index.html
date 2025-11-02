@@ -2410,15 +2410,9 @@
         </div>
     </main>
 
-    <!-- Load Polygon Integration -->
-    <script src="js/polygon-integration.js"></script>
-    
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
-        
-        // Expose dismissToast globally for toast notifications
-        window.dismissToast = dismissToast;
 
         // Typing animation
         const typingText = document.getElementById('typing-text');
@@ -2465,7 +2459,20 @@
         }
 
         // Load leaderboard when page opens
-        document.addEventListener('DOMContentLoaded', loadLeaderboard);
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLeaderboard();
+            
+            // Load Polygon Integration after DOM is ready
+            const script = document.createElement('script');
+            script.src = 'js/polygon-integration.js';
+            script.onload = function() {
+                console.log('✅ Polygon integration loaded');
+            };
+            script.onerror = function() {
+                console.log('⚠️ Polygon integration failed to load');
+            };
+            document.head.appendChild(script);
+        });
 
         // User Info functionality - Updated with real stats from Wave 2
         function updateUserInfo() {
