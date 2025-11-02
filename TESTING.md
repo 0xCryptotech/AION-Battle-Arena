@@ -1,190 +1,203 @@
-# 🧪 AION Testing Guide
+# 🧪 Testing Pyth Network Integration
 
-## 🎯 Quick Test (Paling Mudah)
+## Quick Test
 
-Test UI dan backend tanpa Linera:
-
+### 1. Open Test Page
 ```bash
-# 1. Start MongoDB
-mongod
+# Start local server
+python3 -m http.server 3000
 
-# 2. Start Backend
-cd backend
-uvicorn server:app --reload --port 8001
-
-# 3. Buka browser
-# File: aion-static\index.html
+# Open in browser
+open http://localhost:3000/test-pyth.html
 ```
 
-**Cek:**
-- ✅ Dashboard menampilkan statistics
-- ✅ Marketplace menampilkan predictions
-- ✅ Leaderboard menampilkan AI models
-- ✅ Governance menampilkan proposals
-- ✅ Connect Wallet berfungsi (MetaMask)
+### 2. Test Features
+
+#### ✅ Single Price Test
+1. Select asset (e.g., BTC/USD)
+2. Click "Get Price"
+3. Verify price displays correctly
+4. Check console log for success message
+
+#### ✅ Batch Price Test
+1. Click "Get All Prices"
+2. Verify all 4 prices load
+3. Check console for individual price logs
+
+#### ✅ Live Updates Test
+1. Click "Start Live Updates"
+2. Watch BTC price update every 5 seconds
+3. Click "Stop Updates" to pause
+4. Verify console shows update logs
+
+## Main App Testing
+
+### 1. Dashboard Test
+```bash
+# Open main app
+open http://localhost:3000/index.html
+```
+
+1. Navigate to Dashboard
+2. Select "Crypto" category
+3. Choose "Bitcoin (BTC)"
+4. Watch live price update every 5 seconds
+5. Verify "via Pyth Network" attribution
+
+### 2. Battle Modal Test
+1. Click "Join Battle"
+2. Select "AI vs Human"
+3. Choose BTC/USD asset
+4. Verify live price displays
+5. Check price updates every 2 seconds
+
+### 3. Battle Simulation Test
+1. Start a battle with BTC/USD
+2. Watch real-time price updates
+3. Verify battle uses Pyth prices
+4. Check final result calculation
+
+## Console Testing
+
+### Test Pyth Functions
+```javascript
+// In browser console
+
+// 1. Test initialization
+await initPyth()
+
+// 2. Get single price
+const btc = await getPythPrice('BTC/USD')
+console.log('BTC Price:', btc.price)
+
+// 3. Get multiple prices
+const prices = await getPythPrices(['BTC/USD', 'ETH/USD', 'SOL/USD'])
+console.log('Prices:', prices)
+
+// 4. Test cache
+const cached = await getPriceWithCache('BTC/USD')
+console.log('Cached:', cached)
+
+// 5. Check if fresh
+console.log('Is fresh?', isPriceFresh('BTC/USD'))
+
+// 6. Clear cache
+clearPriceCache()
+```
+
+## Expected Results
+
+### ✅ Success Indicators
+- Status shows "Connected ✅"
+- Prices display with $ symbol
+- Console shows green success messages
+- Live updates work smoothly
+- No error messages in console
+
+### ❌ Failure Indicators
+- Status shows "Failed ❌"
+- Red error messages in console
+- Prices show as "-" or "Loading..."
+- Network errors in browser console
+
+## Troubleshooting
+
+### Issue: "Failed to initialize Pyth"
+**Solution**: 
+- Check internet connection
+- Verify Polygon Amoy RPC is accessible
+- Try refreshing the page
+
+### Issue: "Price feed not found"
+**Solution**:
+- Verify asset symbol is correct (e.g., 'BTC/USD' not 'BTCUSD')
+- Check supported assets list
+
+### Issue: Prices not updating
+**Solution**:
+- Check browser console for errors
+- Verify Pyth Network is initialized
+- Clear cache: `clearPriceCache()`
+
+### Issue: Slow price fetching
+**Solution**:
+- Use cached prices: `getPriceWithCache()`
+- Check RPC connection speed
+- Verify network is not rate-limiting
+
+## Performance Benchmarks
+
+### Expected Response Times
+- **Cache Hit**: < 1ms
+- **Fresh Fetch**: 200-500ms
+- **Batch Request**: 500-1000ms
+- **Live Update**: 200-500ms per update
+
+### Memory Usage
+- **Pyth Integration**: ~2-5 MB
+- **Price Cache**: ~1 KB per asset
+- **Total Overhead**: < 10 MB
+
+## Network Requirements
+
+### Polygon Amoy Testnet
+- **RPC**: https://rpc-amoy.polygon.technology
+- **Chain ID**: 80002
+- **Pyth Contract**: 0x2880aB155794e7179c9eE2e38200202908C17B43
+
+### Browser Requirements
+- Modern browser (Chrome, Firefox, Safari, Edge)
+- JavaScript enabled
+- MetaMask extension (optional, for wallet features)
+
+## Test Checklist
+
+- [ ] Pyth Network initializes successfully
+- [ ] Single price fetch works
+- [ ] Batch price fetch works
+- [ ] Live updates work
+- [ ] Dashboard shows real prices
+- [ ] Battle modal shows real prices
+- [ ] Battle simulation uses real prices
+- [ ] Fallback works when Pyth fails
+- [ ] Cache system works correctly
+- [ ] No console errors
+
+## Automated Testing (Future)
+
+```javascript
+// Test suite example
+async function runTests() {
+    console.log('🧪 Running Pyth integration tests...');
+    
+    // Test 1: Initialization
+    const initSuccess = await initPyth();
+    console.assert(initSuccess, 'Pyth initialization failed');
+    
+    // Test 2: Single price
+    const btcPrice = await getPythPrice('BTC/USD');
+    console.assert(btcPrice.price > 0, 'BTC price invalid');
+    
+    // Test 3: Batch prices
+    const prices = await getPythPrices(['BTC/USD', 'ETH/USD']);
+    console.assert(Object.keys(prices).length === 2, 'Batch fetch failed');
+    
+    // Test 4: Cache
+    const cached = await getPriceWithCache('BTC/USD');
+    console.assert(cached.price === btcPrice.price, 'Cache mismatch');
+    
+    console.log('✅ All tests passed!');
+}
+```
+
+## Support
+
+If tests fail:
+1. Check browser console for detailed errors
+2. Verify network connection
+3. Ensure Polygon Amoy RPC is accessible
+4. Review PYTH_INTEGRATION.md for troubleshooting
 
 ---
 
-## 1️⃣ Setup Awal (Sekali Saja)
-
-```bash
-# Install Linera CLI
-scripts\setup_linera.bat
-
-# Install Python dependencies
-cd backend
-pip install -r requirements.txt
-cd ..
-```
-
----
-
-## 2️⃣ Setup Environment
-
-```bash
-# Copy template
-copy .env.example backend\.env
-
-# Edit dengan notepad
-notepad backend\.env
-```
-
-**Isi minimal:**
-```env
-MONGO_URL=mongodb://localhost:27017
-DB_NAME=aion_db
-API_KEY=test-secret-key
-CORS_ORIGINS=http://localhost:3000
-```
-
----
-
-## 3️⃣ Test Backend
-
-```bash
-# Terminal 1: MongoDB
-mongod
-
-# Terminal 2: Backend
-cd backend
-uvicorn server:app --reload --port 8001
-```
-
-**Test API:**
-```bash
-curl http://localhost:8001/api/statistics
-curl http://localhost:8001/api/predictions
-curl http://localhost:8001/api/ai-models
-```
-
----
-
-## 4️⃣ Test Frontend
-
-```bash
-# Buka langsung
-aion-static\index.html
-
-# Atau dengan server
-cd aion-static
-python -m http.server 3000
-# http://localhost:3000
-```
-
----
-
-## 5️⃣ Test Linera Integration
-
-```bash
-# Terminal 1: Linera network
-linera net up --local
-
-# Terminal 2: Build contract
-cd linera
-cargo build --target wasm32-unknown-unknown --release
-
-# Terminal 3: Test CLI
-python scripts\aion_cli.py query
-```
-
----
-
-## 6️⃣ Test Otomatis (All-in-One)
-
-```bash
-scripts\deploy_local.bat
-```
-
-**Ini akan start:**
-- Linera network
-- Backend (port 8001)
-- Indexer
-
----
-
-## 7️⃣ Test Unit Tests
-
-```bash
-# Test semua
-scripts\test_all.bat
-
-# Manual
-cd linera && cargo test
-cd backend && pytest
-```
-
----
-
-## 8️⃣ Test API Endpoints
-
-```bash
-# Statistics
-curl http://localhost:8001/api/statistics
-
-# Predictions
-curl http://localhost:8001/api/predictions
-
-# Linera state
-curl http://localhost:8001/api/linera/state
-
-# Stake (POST)
-curl -X POST http://localhost:8001/api/linera/stake ^
-  -H "Content-Type: application/json" ^
-  -d "{\"market_id\": 1, \"amount\": 1000, \"prediction\": true, \"wallet_address\": \"0x123\"}"
-```
-
----
-
-## ⚠️ Troubleshooting
-
-**MongoDB error:**
-```bash
-# Install MongoDB atau gunakan MongoDB Atlas
-# Update MONGO_URL di backend\.env
-```
-
-**Linera CLI not found:**
-```bash
-cargo install linera-cli
-```
-
-**Port 8001 sudah dipakai:**
-```bash
-# Ganti di backend\.env
-BACKEND_PORT=8002
-```
-
----
-
-## 📋 Test Checklist
-
-- [ ] MongoDB running
-- [ ] Backend API responding
-- [ ] Frontend UI loading
-- [ ] Predictions displayed
-- [ ] AI Models leaderboard working
-- [ ] Wallet connection working
-- [ ] Linera CLI installed
-- [ ] Contract builds successfully
-- [ ] Unit tests passing
-- [ ] API endpoints responding
+**Last Updated**: ${new Date().toISOString()}

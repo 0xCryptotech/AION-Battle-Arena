@@ -802,6 +802,20 @@ async function connectWallet() {
             return;
         }
         
+        // Check and switch network FIRST
+        const network = await provider.getNetwork();
+        if (network.chainId !== POLYGON_AMOY.chainIdDecimal) {
+            showLoading('Switching to Polygon Amoy...');
+            try {
+                await switchToPolygonAmoy();
+            } catch (switchError) {
+                hideLoading();
+                window.isConnecting = false;
+                showNotification('Please switch to Polygon Amoy Testnet manually in MetaMask', 'error');
+                return;
+            }
+        }
+        
         // Request account access
         const accounts = await provider.send("eth_requestAccounts", []);
         if (!accounts || accounts.length === 0) {
@@ -817,8 +831,6 @@ async function connectWallet() {
         walletState.isConnected = true;
         
         // Check network
-        const network = await provider.getNetwork();
-        walletState.chainId = network.chainId;
         
         // Check if network is correct and update state
         if (!checkNetwork()) {
@@ -1033,6 +1045,66 @@ function isContractDeployed() {
     return CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000' && CONTRACT_ABI.length > 0;
 }
 
+/**
+ * Check if user has sufficient AION balance
+ * @param {number} amount - Amount to check
+ * @returns {Promise<boolean>} True if sufficient balance
+ */
+async function checkAionBalance(amount) {
+    try {
+        const contract = await getContract();
+        const balance = await contract.balanceOf(walletState.address);
+        const required = ethers.utils.parseEther(amount.toString());
+        return balance.gte(required);
+    } catch (error) {
+        console.error('Error checking balance:', error);
+        return false;
+    }
+}
+
+/**
+ * Check and request token approval
+ * @param {number} amount - Amount to approve
+ * @returns {Promise<boolean>} True if approved
+ */
+async function checkAndApproveTokens(amount) {
+    try {
+        const contract = await getContract();
+        const amountWei = ethers.utils.parseEther(amount.toString());
+        
+        // Check current allowance
+        const allowance = await contract.allowance(walletState.address, CONTRACT_ADDRESS);
+        
+        if (allowance.gte(amountWei)) {
+            console.log('✅ Tokens already approved');
+            return true;
+        }
+        
+        // Request approval
+        showLoading('Requesting token approval...');
+        showNotification('💰 Please approve AION tokens in MetaMask', 'info');
+        
+        const approveTx = await contract.approve(CONTRACT_ADDRESS, amountWei);
+        
+        showLoading('Waiting for approval confirmation...');
+        await approveTx.wait();
+        
+        showNotification('✅ Tokens approved successfully!', 'success');
+        return true;
+        
+    } catch (error) {
+        console.error('Error approving tokens:', error);
+        hideLoading();
+        
+        if (error.code === 4001) {
+            showNotification('Token approval cancelled', 'warning');
+        } else {
+            showNotification('Failed to approve tokens', 'error');
+        }
+        return false;
+    }
+}
+
 // Create Battle
 async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
     if (!isContractDeployed()) {
@@ -1041,22 +1113,38 @@ async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
     }
     
     try {
+        // Check balance first
+        showLoading('Checking balance...');
+        const hasBalance = await checkAionBalance(stakeAmount);
+        
+        if (!hasBalance) {
+            hideLoading();
+            const balance = await getContract().then(c => c.balanceOf(walletState.address)).then(b => ethers.utils.formatEther(b));
+            showNotification(`Insufficient AION balance. You have ${parseFloat(balance).toFixed(2)} AION, need ${stakeAmount} AION`, 'error');
+            return { success: false, error: 'Insufficient balance' };
+        }
+        
+        // Check and approve tokens
+        const approved = await checkAndApproveTokens(stakeAmount);
+        if (!approved) {
+            return { success: false, error: 'Token approval failed' };
+        }
+        
+        // Create battle
         showLoading('Creating battle on-chain...');
-        showNotification('📝 Creating battle on Polygon Amoy...', 'info');
+        showNotification('⚔️ Creating battle on Polygon Amoy...', 'info');
         
         const contract = await getContract();
         const amount = ethers.utils.parseEther(stakeAmount.toString());
         
-        // Approve AION tokens first
-        showLoading('Approving AION tokens...');
-        showNotification('💰 Approving AION tokens...', 'info');
-        const approveTx = await contract.approve(CONTRACT_ADDRESS, amount);
-        await approveTx.wait();
+        console.log('📝 Creating battle with params:');
+        console.log('  - Direction:', direction);
+        console.log('  - Amount:', amount.toString(), 'wei (', stakeAmount, 'AION)');
+        console.log('  - Contract:', contract.address);
+        console.log('  - User:', walletState.address);
         
-        // Create battle
-        showLoading('Creating battle...');
-        showNotification('⚔️ Creating battle...', 'info');
         const tx = await contract.createBattle(direction, amount);
+        console.log('✅ Transaction sent:', tx.hash);
         
         showLoading('Waiting for confirmation...');
         showNotification('⏳ Waiting for blockchain confirmation...', 'info');
@@ -1084,7 +1172,7 @@ async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
         });
         
         // Refresh balances after transaction
-        refreshBalances();
+        await refreshBalances();
         
         return {
             success: true,
@@ -1094,6 +1182,9 @@ async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
     } catch (error) {
         hideLoading();
         console.error('Error creating battle:', error);
+        console.error('Error message:', error.message);
+        console.error('Error data:', error.data);
+        console.error('Error code:', error.code);
         handleWalletError(error);
         return { success: false, error: error.message };
     }
@@ -1375,13 +1466,11 @@ window.addEventListener('load', async () => {
         await initWeb3();
         setupEventListeners();
         
-        // Attempt auto-reconnect if user was previously connected
-        const reconnected = await attemptAutoReconnect();
-        
-        // Restore active battles if wallet reconnected
-        if (reconnected) {
-            restoreActiveBattles();
-        }
+        // Auto-reconnect disabled - user must manually connect
+        // const reconnected = await attemptAutoReconnect();
+        // if (reconnected) {
+        //     restoreActiveBattles();
+        // }
     }
     
     // Setup UI event listeners
@@ -1404,14 +1493,17 @@ function toggleWalletDropdown() { console.log('Toggle dropdown'); }
 function showComingSoon() { showNotification('Coming soon!', 'info'); }
 function handleWalletError(error) {
     console.error('Wallet error:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     if (error.code === 4001) {
         showNotification('Connection cancelled', 'warning');
     } else if (error.code === -32002) {
         showNotification('Please check MetaMask - request already pending', 'warning');
     } else if (error.message && error.message.includes('already pending')) {
         showNotification('Please complete the pending request in MetaMask', 'warning');
+    } else if (error.message && error.message.includes('network')) {
+        showNotification('Network error. Please switch to Polygon Amoy Testnet in MetaMask.', 'error');
     } else {
-        showNotification('Connection error. Please try again.', 'error');
+        showNotification(error.message || 'Connection error. Please try again.', 'error');
     }
 }
 function showLoading(msg = 'Loading...') {
@@ -1442,6 +1534,8 @@ window.getMaticBalance = getMaticBalance;
 window.getAionBalance = getAionBalance;
 window.updateBalances = updateBalances;
 window.refreshBalances = refreshBalances;
+window.checkAionBalance = checkAionBalance;
+window.checkAndApproveTokens = checkAndApproveTokens;
 window.showWalletModal = showWalletModal;
 window.closeWalletModal = closeWalletModal;
 window.toggleWalletDropdown = toggleWalletDropdown;

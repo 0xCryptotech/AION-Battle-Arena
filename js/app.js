@@ -1,9 +1,8 @@
 // AION Battle Arena - Main Application JavaScript
 // This file handles all UI interactions and navigation
 
-// Global state
-let isConnected = false;
-let walletAddress = null;
+// Global state - use functions from polygon-integration.js
+// Don't create local functions - use window directly to avoid recursion
 
 // ============================================
 // NAVIGATION FUNCTIONS
@@ -117,26 +116,7 @@ function toggleTheme() {
 /**
  * Connect wallet
  */
-async function connectWallet() {
-    if (typeof window.ethereum !== 'undefined') {
-        try {
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            walletAddress = accounts[0];
-            isConnected = true;
-            updateWalletUI();
-            updateUserInfo();
-            loadUserProfile();
-            updateDashboardUserInfo();
-            updateVotingPower();
-            showSimpleNotification('Wallet connected: ' + walletAddress.substring(0, 6) + '...', 'success');
-        } catch (error) {
-            console.error('Error connecting wallet:', error);
-            showSimpleNotification('Error connecting wallet: ' + error.message, 'error');
-        }
-    } else {
-        showSimpleNotification('MetaMask not detected! Please install MetaMask browser extension.', 'error');
-    }
-}
+// connectWallet is in polygon-integration.js
 
 /**
  * Update wallet UI
@@ -144,8 +124,8 @@ async function connectWallet() {
 function updateWalletUI() {
     const walletText = document.getElementById('walletText');
     if (walletText) {
-        if (isConnected && walletAddress) {
-            walletText.textContent = walletAddress.substring(0, 6) + '...' + walletAddress.substring(38);
+        if (window.isWalletConnected() && window.getUserAddress()) {
+            walletText.textContent = window.getUserAddress().substring(0, 6) + '...' + window.getUserAddress().substring(38);
         } else {
             walletText.textContent = 'Connect Wallet';
         }
@@ -160,9 +140,10 @@ function updateWalletUI() {
  * Update user info
  */
 function updateUserInfo() {
-    if (isConnected && walletAddress) {
+    try {
+    if (window.isWalletConnected() && window.getUserAddress()) {
         // Get real player statistics from localStorage
-        const stats = (typeof window.getPlayerStats === 'function') ? window.getPlayerStats(walletAddress) : null;
+        const stats = (typeof window.getPlayerStats === 'function') ? window.getPlayerStats(window.getUserAddress()) : null;
         
         if (stats) {
             // Update battle metrics
@@ -180,7 +161,10 @@ function updateUserInfo() {
             updateElement('userLongestStreak', stats.longestWinStreak || 0);
             
             // Update wallet info
-            updateElement('userWalletAddress', walletAddress.substring(0, 6) + '...' + walletAddress.substring(38));
+            const addr = window.getUserAddress();
+            if (addr) {
+                updateElement('userWalletAddress', addr.substring(0, 6) + '...' + addr.substring(38));
+            }
             
             // Update earnings
             updateElement('userTotalStaked', (stats.totalEarnings || 0).toFixed(2) + ' AION');
@@ -198,12 +182,38 @@ function updateUserInfo() {
             resetUserInfoDisplay();
         }
         
-        // Update balance
-        updateElement('userAionBalance', (Math.random() * 10000 + 1000).toFixed(2) + ' AION');
-        updateElement('userEthBalance', (Math.random() * 5).toFixed(4) + ' ETH');
+        // Update real balance from blockchain
+        updateUserBalanceDisplay();
     } else {
         // Not connected - show default values
         resetUserInfoDisplay();
+    }
+    } catch (error) {
+        console.error('Error in updateUserInfo:', error);
+        resetUserInfoDisplay();
+    }
+}
+
+/**
+ * Update user balance display with real data
+ */
+async function updateUserBalanceDisplay() {
+    if (!isConnected || !window.getUserAddress()) return;
+    
+    try {
+        // Get real AION balance
+        if (typeof window.getAionBalance === 'function') {
+            const aionBalance = window.getAionBalance();
+            updateElement('userAionBalance', parseFloat(aionBalance).toFixed(2) + ' AION');
+        }
+        
+        // Get real MATIC balance
+        if (typeof window.getMaticBalance === 'function') {
+            const maticBalance = window.getMaticBalance();
+            updateElement('userEthBalance', parseFloat(maticBalance).toFixed(4) + ' MATIC');
+        }
+    } catch (error) {
+        console.error('Error updating balance display:', error);
     }
 }
 
@@ -340,14 +350,14 @@ function getTimeAgo(timestamp) {
  * Refresh user info
  */
 function refreshUserInfo() {
-    if (!isConnected) {
+    if (!window.isWalletConnected()) {
         showSimpleNotification('Please connect your wallet first!', 'warning');
         return;
     }
     
     updateUserInfo();
     
-    const stats = (typeof window.getPlayerStats === 'function') ? window.getPlayerStats(walletAddress) : null;
+    const stats = (typeof window.getPlayerStats === 'function') ? window.getPlayerStats(window.getUserAddress()) : null;
     if (stats) {
         showSimpleNotification(
             `Stats refreshed! ${stats.totalBattles} battles, ${stats.wins} wins, ${stats.winRate.toFixed(1)}% win rate`,
@@ -362,16 +372,16 @@ function refreshUserInfo() {
  * Export user data
  */
 function exportUserData() {
-    if (!isConnected) {
+    if (!window.isWalletConnected()) {
         showSimpleNotification('Please connect your wallet first!', 'warning');
         return;
     }
     
-    const stats = (typeof window.getPlayerStats === 'function') ? window.getPlayerStats(walletAddress) : null;
+    const stats = (typeof window.getPlayerStats === 'function') ? window.getPlayerStats(window.getUserAddress()) : null;
     const battleHistory = (typeof window.loadBattleHistory === 'function') ? window.loadBattleHistory() : [];
     
     const data = {
-        wallet: walletAddress,
+        wallet: window.getUserAddress(),
         exportedAt: new Date().toISOString(),
         statistics: stats || {
             totalBattles: 0,
@@ -392,7 +402,7 @@ function exportUserData() {
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `aion-stats-${walletAddress.substring(0, 8)}-${Date.now()}.json`;
+    link.download = `aion-stats-${window.getUserAddress().substring(0, 8)}-${Date.now()}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -405,7 +415,7 @@ function exportUserData() {
  * Edit profile
  */
 function editProfile() {
-    if (!isConnected) {
+    if (!window.isWalletConnected()) {
         alert('Please connect your wallet first!');
         return;
     }
@@ -416,13 +426,13 @@ function editProfile() {
     const newName = prompt('Enter your name:', currentName === 'Anonymous User' ? '' : currentName);
     if (newName) {
         updateElement('userName', newName);
-        localStorage.setItem('userName_' + walletAddress, newName);
+        localStorage.setItem('userName_' + window.getUserAddress(), newName);
     }
 
     const newBio = prompt('Enter your bio:', currentBio === 'No bio yet' ? '' : currentBio);
     if (newBio) {
         updateElement('userBio', newBio);
-        localStorage.setItem('userBio_' + walletAddress, newBio);
+        localStorage.setItem('userBio_' + window.getUserAddress(), newBio);
     }
 
     if (newName || newBio) {
@@ -434,7 +444,7 @@ function editProfile() {
  * Change photo
  */
 function changePhoto() {
-    if (!isConnected) {
+    if (!window.isWalletConnected()) {
         alert('Please connect your wallet first!');
         return;
     }
@@ -448,11 +458,11 @@ function changePhoto() {
     const choice = prompt(styleOptions + '\nEnter number (1-6):');
     if (choice && choice >= 1 && choice <= 6) {
         const selectedStyle = styles[choice - 1];
-        const seed = walletAddress || 'default';
+        const seed = window.getUserAddress() || 'default';
         const photoUrl = `https://api.dicebear.com/7.x/${selectedStyle}/svg?seed=${seed}`;
         const photoEl = document.getElementById('userPhoto');
         if (photoEl) photoEl.src = photoUrl;
-        localStorage.setItem('userPhoto_' + walletAddress, photoUrl);
+        localStorage.setItem('userPhoto_' + window.getUserAddress(), photoUrl);
         alert('✅ Photo updated!');
     }
 }
@@ -461,10 +471,10 @@ function changePhoto() {
  * Load user profile
  */
 function loadUserProfile() {
-    if (isConnected && walletAddress) {
-        const savedName = localStorage.getItem('userName_' + walletAddress);
-        const savedBio = localStorage.getItem('userBio_' + walletAddress);
-        const savedPhoto = localStorage.getItem('userPhoto_' + walletAddress);
+    if (window.isWalletConnected() && window.getUserAddress()) {
+        const savedName = localStorage.getItem('userName_' + window.getUserAddress());
+        const savedBio = localStorage.getItem('userBio_' + window.getUserAddress());
+        const savedPhoto = localStorage.getItem('userPhoto_' + window.getUserAddress());
 
         if (savedName) updateElement('userName', savedName);
         if (savedBio) updateElement('userBio', savedBio);
@@ -474,7 +484,7 @@ function loadUserProfile() {
             if (savedPhoto) {
                 photoEl.src = savedPhoto;
             } else {
-                photoEl.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${walletAddress}`;
+                photoEl.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${window.getUserAddress()}`;
             }
         }
     }
@@ -484,10 +494,10 @@ function loadUserProfile() {
  * Update dashboard user info
  */
 function updateDashboardUserInfo() {
-    if (isConnected && walletAddress) {
-        const userName = localStorage.getItem('userName_' + walletAddress) || 'Anonymous';
+    if (window.isWalletConnected() && window.getUserAddress()) {
+        const userName = localStorage.getItem('userName_' + window.getUserAddress()) || 'Anonymous';
         updateElement('dash-user-name', userName);
-        updateElement('dash-user-wallet', walletAddress.substring(0, 6) + '...' + walletAddress.substring(38));
+        updateElement('dash-user-wallet', window.getUserAddress().substring(0, 6) + '...' + window.getUserAddress().substring(38));
     }
 }
 
@@ -561,7 +571,7 @@ function showItemDetail(itemId) {
  * Buy item
  */
 function buyItem(itemId) {
-    if (!isConnected) {
+    if (!window.isWalletConnected()) {
         showSimpleNotification('Please connect your wallet first!', 'warning');
         return;
     }
@@ -583,6 +593,10 @@ function closeModal() {
  * Close battle modal
  */
 function closeBattleModal() {
+    const modal = document.getElementById('battleModal');
+    if (modal && modal.dataset.priceInterval) {
+        clearInterval(parseInt(modal.dataset.priceInterval));
+    }
     closeModal();
 }
 
@@ -629,10 +643,53 @@ function updateBattleAssets() {
     updateModalLivePrice();
 }
 
+// Store last fetched prices to sync Dashboard and Battle Modal
+window.lastFetchedPrices = window.lastFetchedPrices || {};
+
 /**
- * Update modal live price
+ * Get current price for asset (shared between Dashboard and Battle Modal)
  */
-function updateModalLivePrice() {
+async function getCurrentPrice(category, asset) {
+    const cacheKey = `${category}_${asset}`;
+    
+    // Try to get real price from Pyth for crypto assets
+    if (category === 'crypto' && typeof window.getPriceWithCache === 'function') {
+        try {
+            const symbol = `${asset}/USD`;
+            if (window.isPriceFeedSupported && window.isPriceFeedSupported(symbol)) {
+                const priceData = await window.getPriceWithCache(symbol);
+                window.lastFetchedPrices[cacheKey] = priceData.price;
+                return priceData.price;
+            }
+        } catch (error) {
+            console.log('Pyth price fetch failed, using fallback:', error);
+        }
+    }
+    
+    // Return cached price if available (within 5 seconds)
+    if (window.lastFetchedPrices[cacheKey]) {
+        return window.lastFetchedPrices[cacheKey];
+    }
+    
+    // Fallback to simulated prices
+    const allPrices = {
+        crypto: { BTC: 95234, ETH: 3456, SOL: 145, MATIC: 0.8 },
+        market: { SPX: 5234, NDX: 18456, GOLD: 2034, OIL: 78, EUR: 1.08 },
+        esport: { TL: 85, FNC: 78, G2: 92, T1: 88, C9: 76 }
+    };
+    
+    const basePrice = allPrices[category]?.[asset] || 1000;
+    const fluctuation = (Math.random() - 0.5) * 0.02;
+    const currentPrice = basePrice * (1 + fluctuation);
+    
+    window.lastFetchedPrices[cacheKey] = currentPrice;
+    return currentPrice;
+}
+
+/**
+ * Update modal live price with Pyth Network
+ */
+async function updateModalLivePrice() {
     const priceEl = document.getElementById('modalLivePrice');
     if (!priceEl) return;
     
@@ -641,19 +698,8 @@ function updateModalLivePrice() {
     const category = categorySelect?.value || 'crypto';
     const asset = assetSelect?.value || 'BTC';
     
-    const allPrices = {
-        crypto: { BTC: 95234, ETH: 3456, SOL: 145, MATIC: 0.8 },
-        market: { SPX: 5234, NDX: 18456, GOLD: 2034, OIL: 78, EUR: 1.08 },
-        esport: { TL: 85, FNC: 78, G2: 92, T1: 88, C9: 76 }
-    };
-    
-    const basePrice = allPrices[category]?.[asset] || 1000;
-    
-    // Simulate small price fluctuation
-    const fluctuation = (Math.random() - 0.5) * 0.002;
-    const currentPrice = basePrice * (1 + fluctuation);
-    
-    priceEl.textContent = `$${currentPrice.toFixed(2)}`;
+    const currentPrice = await getCurrentPrice(category, asset);
+    priceEl.textContent = `$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 }
 
 // ============================================
@@ -671,7 +717,7 @@ function startAIvAIBattle() {
  * Start AI vs Human battle
  */
 function startAIvHumanBattle() {
-    if (!isConnected) {
+    if (!window.isWalletConnected()) {
         showSimpleNotification('Please connect your wallet first!', 'warning');
         return;
     }
@@ -682,7 +728,7 @@ function startAIvHumanBattle() {
  * Start Human vs Human battle
  */
 function startHumanvHumanBattle() {
-    if (!isConnected) {
+    if (!window.isWalletConnected()) {
         showSimpleNotification('Please connect your wallet first!', 'warning');
         return;
     }
@@ -695,7 +741,7 @@ function startHumanvHumanBattle() {
 function openBattleModal(battleType) {
     const modal = document.createElement('div');
     modal.id = 'battleModal';
-    modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto';
+    modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4';
     
     const typeInfo = {
         'AI_VS_AI': { title: '🤖 AI vs AI Battle', desc: 'Watch AI models compete • Live price from Pyth Network' },
@@ -709,7 +755,8 @@ function openBattleModal(battleType) {
     const showPrediction = battleType !== 'AI_VS_AI';
     
     let htmlContent = `
-        <div class="bg-gradient-to-br from-gray-900 to-black border-2 border-red-500 rounded-xl p-6 max-w-2xl w-full my-8">
+        <div class="bg-gradient-to-br from-gray-900 to-black border-2 border-red-500 rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
             <h3 class="text-2xl font-bold mb-2 text-white">${info.title}</h3>
             <p class="text-gray-400 mb-3">${info.desc}</p>
             
@@ -851,15 +898,20 @@ function openBattleModal(battleType) {
                     </div>
                 </div>
             </div>
-            
-            <div class="space-y-2 mt-4">
-                <button onclick="startBattleWithBet('${battleType}')" class="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 font-bold text-sm">
+            </div>
+            </div>
+        
+        <!-- Buttons Section -->
+        <div class="px-6 pb-6">
+            <div class="flex flex-col gap-3">
+                <button onclick="window.startBattleWithBet('${battleType}')" class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 font-bold text-sm">
                     Start Battle
                 </button>
-                <button onclick="closeBattleModal()" class="w-full bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-600 font-bold text-sm">
+                <button onclick="closeBattleModal()" class="w-full bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-600 font-bold text-sm">
                     Cancel
                 </button>
             </div>
+        </div>
         </div>
     `;
     
@@ -867,9 +919,19 @@ function openBattleModal(battleType) {
     
     document.body.appendChild(modal);
     
-    // Simulate live price update
+    // Live price update with Pyth
     updateModalLivePrice();
-    const priceInterval = setInterval(updateModalLivePrice, 2000);
+    const priceInterval = setInterval(() => {
+        // Clear cache to force new price fetch
+        const categorySelect = document.getElementById('battleCategory');
+        const assetSelect = document.getElementById('battleAsset');
+        const category = categorySelect?.value || 'crypto';
+        const asset = assetSelect?.value || 'BTC';
+        const cacheKey = `${category}_${asset}`;
+        delete window.lastFetchedPrices[cacheKey];
+        
+        updateModalLivePrice();
+    }, 2000);
     
     // Clear interval when modal closes
     modal.addEventListener('click', (e) => {
@@ -877,6 +939,9 @@ function openBattleModal(battleType) {
             clearInterval(priceInterval);
         }
     });
+    
+    // Store interval ID for cleanup
+    modal.dataset.priceInterval = priceInterval;
     
     // Update prize pool when stake changes
     const stakeInput = document.getElementById('stakeAmount');
@@ -933,10 +998,11 @@ async function startBattleWithBet(battleType) {
     }
     
     // Check wallet connection
-    if (!isConnected || !walletAddress) {
+    if (!window.isWalletConnected()) {
         showSimpleNotification('Please connect your wallet first!', 'warning');
         return;
     }
+    const walletAddress = window.getUserAddress();
     
     // For AI vs AI, randomly select directions for both AIs
     let direction1, direction2, playerModel, opponentModel, bettingOn;
@@ -969,47 +1035,47 @@ async function startBattleWithBet(battleType) {
     // Try to create battle on-chain
     let result = { success: false, demo: true };
     
+    console.log('🔍 Checking createBattleOnChain function:', typeof window.createBattleOnChain);
+    console.log('🔍 Wallet connected:', isConnected, window.getUserAddress());
+    console.log('🔍 Battle params:', { direction1, stakeAmount, asset, timeframe });
+    
     if (typeof window.createBattleOnChain === 'function') {
         try {
+            console.log('✅ Calling createBattleOnChain...');
+            showSimpleNotification('🔄 Preparing battle on-chain...', 'info');
             result = await window.createBattleOnChain(direction1, stakeAmount, asset, timeframe);
+            console.log('✅ Result:', result);
+            
+            if (!result.success && !result.demo) {
+                // Error occurred, use demo mode as fallback
+                console.log('⚠️ Battle creation failed, switching to demo mode');
+                showSimpleNotification('⚠️ On-chain failed, using demo mode', 'warning');
+                result = { success: false, demo: true };
+            }
         } catch (error) {
-            console.error('Error creating battle on-chain:', error);
-            showSimpleNotification('Using demo mode', 'info');
+            console.error('❌ Error creating battle on-chain:', error);
+            showSimpleNotification('⚠️ Using demo mode', 'warning');
             result = { success: false, demo: true };
         }
+    } else {
+        console.log('⚠️ createBattleOnChain function not found, using demo mode');
     }
     
-    if (result.success) {
-        // Start battle simulation with on-chain data
-        startBattleSimulation({
-            type: battleType,
-            asset: asset,
-            timeframe: timeframe,
-            direction: direction1,
-            opponentDirection: direction2,
-            stakeAmount: stakeAmount,
-            playerModel: playerModel,
-            opponentModel: opponentModel,
-            bettingOn: bettingOn,
-            battleId: result.battleId,
-            txHash: result.txHash,
-            onChain: true
-        });
-    } else {
-        // Demo mode - use simulation
-        startBattleSimulation({
-            type: battleType,
-            asset: asset,
-            timeframe: timeframe,
-            direction: direction1,
-            opponentDirection: direction2,
-            stakeAmount: stakeAmount,
-            playerModel: playerModel,
-            opponentModel: opponentModel,
-            bettingOn: bettingOn,
-            onChain: false
-        });
-    }
+    // Start battle simulation
+    startBattleSimulation({
+        type: battleType,
+        asset: asset,
+        timeframe: timeframe,
+        direction: direction1,
+        opponentDirection: direction2,
+        stakeAmount: stakeAmount,
+        playerModel: playerModel,
+        opponentModel: opponentModel,
+        bettingOn: bettingOn,
+        battleId: result.battleId || null,
+        txHash: result.txHash || null,
+        onChain: result.success || false
+    });
     
     selectedDirection = null;
 }
@@ -1155,26 +1221,43 @@ function startBattleSimulation(battleConfig) {
 }
 
 /**
- * Run battle simulation
+ * Run battle simulation with Pyth Network prices
  */
-function runBattleSimulation(battleId, config) {
+async function runBattleSimulation(battleId, config) {
     const duration = config.timeframe || 60;
     let timeLeft = duration;
     
-    // Simulate starting price
-    const allPrices = {
-        BTC: 95234, ETH: 3456, SOL: 145, MATIC: 0.8,
-        SPX: 5234, NDX: 18456, GOLD: 2034, OIL: 78, EUR: 1.08,
-        TL: 85, FNC: 78, G2: 92, T1: 88, C9: 76
+    // Get category from asset
+    const cryptoAssets = ['BTC', 'ETH', 'SOL', 'MATIC', 'BNB', 'ADA', 'AVAX', 'DOT'];
+    const marketAssets = ['SPX', 'NDX', 'GOLD', 'OIL', 'EUR'];
+    const esportAssets = ['TL', 'FNC', 'G2', 'T1', 'C9'];
+    
+    let category = 'crypto';
+    if (marketAssets.includes(config.asset)) category = 'market';
+    if (esportAssets.includes(config.asset)) category = 'esport';
+    
+    // Use shared getCurrentPrice function to get same price as Dashboard
+    const startPrice = await getCurrentPrice(category, config.asset);
+    const usePyth = category === 'crypto' && typeof window.getPythPrice === 'function';
+    
+    console.log(`✅ Battle starting price for ${config.asset}: $${startPrice}`);
+    
+    document.getElementById('startPrice').textContent = '$' + startPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('currentPrice').textContent = '$' + startPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    
+    // Price update function - use shared getCurrentPrice
+    const updatePrice = async () => {
+        // Clear cache to get fresh price
+        const cacheKey = `${category}_${config.asset}`;
+        delete window.lastFetchedPrices[cacheKey];
+        
+        // Get new price using shared function
+        const newPrice = await getCurrentPrice(category, config.asset);
+        return newPrice;
     };
-    const startPrice = allPrices[config.asset] || 1000;
-    const startPriceWithVariation = startPrice * (1 + (Math.random() - 0.5) * 0.02);
     
-    document.getElementById('startPrice').textContent = '$' + startPriceWithVariation.toFixed(2);
-    document.getElementById('currentPrice').textContent = '$' + startPriceWithVariation.toFixed(2);
-    
-    // Simulate price movement
-    const interval = setInterval(() => {
+    // Battle simulation interval
+    const interval = setInterval(async () => {
         timeLeft--;
         
         // Update timer
@@ -1182,17 +1265,12 @@ function runBattleSimulation(battleId, config) {
         const progress = (timeLeft / duration) * 100;
         document.getElementById('timeBar').style.width = progress + '%';
         
-        // Simulate price change
-        const volatility = 0.001;
-        const trend = config.direction === 'BULLISH' ? 0.0002 : -0.0002;
-        const randomChange = (Math.random() - 0.5) * volatility + trend;
-        const currentPrice = parseFloat(document.getElementById('currentPrice').textContent.replace('$', ''));
-        const newPrice = currentPrice * (1 + randomChange);
-        
-        document.getElementById('currentPrice').textContent = '$' + newPrice.toFixed(2);
+        // Update price
+        const newPrice = await updatePrice();
+        document.getElementById('currentPrice').textContent = '$' + newPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         
         // Calculate price change
-        const priceChangePercent = ((newPrice - startPriceWithVariation) / startPriceWithVariation) * 100;
+        const priceChangePercent = ((newPrice - startPrice) / startPrice) * 100;
         const priceChangeEl = document.getElementById('priceChange');
         priceChangeEl.textContent = (priceChangePercent >= 0 ? '+' : '') + priceChangePercent.toFixed(2) + '%';
         priceChangeEl.className = priceChangePercent >= 0 ? 'text-green-400 text-xl font-bold' : 'text-red-400 text-xl font-bold';
@@ -1200,7 +1278,7 @@ function runBattleSimulation(battleId, config) {
         // Battle ends
         if (timeLeft <= 0) {
             clearInterval(interval);
-            endBattle(battleId, config, startPriceWithVariation, newPrice);
+            endBattle(battleId, config, startPrice, newPrice);
         }
     }, 1000);
 }
@@ -1226,13 +1304,21 @@ async function endBattle(battleId, config, startPrice, endPrice) {
     }
     
     // Complete battle on-chain if it was created on-chain
-    if (config.onChain && config.battleId && typeof window.completeBattleOnChain === 'function') {
+    // Note: Only for Human vs Human battles (contract requires 2 real players)
+    const isHumanVsHuman = config.type === 'HUMAN_VS_HUMAN';
+    if (isHumanVsHuman && config.onChain && config.battleId && typeof window.completeBattleOnChain === 'function') {
         try {
-            const winner = outcome === 'WIN' ? walletAddress : '0x0000000000000000000000000000000000000000';
-            await window.completeBattleOnChain(config.battleId, winner);
+            showSimpleNotification('🏁 Completing battle on-chain...', 'info');
+            const userAddr = window.getUserAddress();
+            const winner = outcome === 'WIN' ? userAddr : '0x0000000000000000000000000000000000000000';
+            const completeResult = await window.completeBattleOnChain(config.battleId, winner);
+            
+            if (completeResult.success) {
+                showSimpleNotification('✅ Battle completed on-chain!', 'success');
+            }
         } catch (error) {
             console.error('Error completing battle on-chain:', error);
-            showSimpleNotification('Battle completed locally', 'info');
+            showSimpleNotification('⚠️ Battle completed locally', 'warning');
         }
     }
     
@@ -1285,7 +1371,10 @@ async function endBattle(battleId, config, startPrice, endPrice) {
         });
     }
     
-    // Update UI
+    // Update UI and refresh balance
+    if (typeof window.refreshBalances === 'function') {
+        await window.refreshBalances();
+    }
     updateUserInfo();
     
     // Show notification
@@ -1305,6 +1394,10 @@ function closeBattleArena() {
     const arena = document.getElementById('battleArena');
     if (arena) {
         arena.remove();
+    }
+    // Hide any loading overlays
+    if (window.hideLoading) {
+        window.hideLoading();
     }
 }
 
@@ -1402,7 +1495,7 @@ function showProposalDetail(id) {
  * Vote on proposal
  */
 function voteProposal(id, vote) {
-    if (!isConnected) {
+    if (!window.isWalletConnected()) {
         showSimpleNotification('Please connect your wallet first!', 'warning');
         return;
     }
@@ -1428,9 +1521,9 @@ function showModelDetail(id) {
 let dashboardInterval = null;
 
 /**
- * Update dashboard prediction
+ * Update dashboard prediction with Pyth Network prices
  */
-function updateDashboardPrediction() {
+async function updateDashboardPrediction() {
     const aiSelect = document.getElementById('dash-ai-select');
     const coinSelect = document.getElementById('dash-coin-select');
     
@@ -1483,10 +1576,11 @@ function updateDashboardPrediction() {
     document.getElementById('dash-coin-name').textContent = selectedCoin.name;
     document.getElementById('dash-ai-info').textContent = `${selectedAI} • ${confidence}%`;
     
-    // Update live price with fluctuation
-    const fluctuation = (Math.random() - 0.5) * 0.02;
-    const currentPrice = selectedCoin.basePrice * (1 + fluctuation);
-    document.getElementById('dash-live-price').textContent = `$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;    document.getElementById('dash-live-price').className = `font-bold text-xl ${isBullish ? 'text-green-400' : 'text-red-400'}`;
+    // Get current price using shared function
+    const currentPrice = await getCurrentPrice(category, selectedCoin.symbol);
+    
+    document.getElementById('dash-live-price').textContent = `$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    document.getElementById('dash-live-price').className = `font-bold text-xl ${isBullish ? 'text-green-400' : 'text-red-400'}`;
     
     // Update direction badge
     const directionBadge = document.getElementById('dash-direction-badge');
@@ -1587,7 +1681,7 @@ function startDashboardLiveUpdates() {
     // Initial update
     updateDashboardPrediction();
     
-    // Update every 5 seconds (more realistic for AI predictions)
+    // Update every 5 seconds with Pyth prices
     dashboardInterval = setInterval(() => {
         updateDashboardPrediction();
     }, 5000);
@@ -1648,12 +1742,22 @@ function showSimpleNotification(message, type = 'info') {
 /**
  * Initialize app on page load
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 AION Battle Arena - App initialized');
     
     // Initialize Lucide icons
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
+    }
+    
+    // Initialize Pyth Network
+    if (typeof window.initPyth === 'function') {
+        try {
+            await window.initPyth();
+            console.log('✅ Pyth Network initialized');
+        } catch (error) {
+            console.log('⚠️ Pyth Network initialization failed, using fallback prices:', error);
+        }
     }
     
     // Set initial page
@@ -1722,5 +1826,6 @@ window.updateDashboardPrediction = updateDashboardPrediction;
 window.updateDashboardCategory = updateDashboardCategory;
 window.startDashboardLiveUpdates = startDashboardLiveUpdates;
 window.stopDashboardLiveUpdates = stopDashboardLiveUpdates;
+window.getCurrentPrice = getCurrentPrice;
 
 console.log('✅ All functions exported to window');

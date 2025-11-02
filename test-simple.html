@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Pyth Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">⚡ Quick Pyth Test</h1>
+        
+        <div id="status" class="bg-blue-900/30 border border-blue-500 rounded-lg p-4 mb-6">
+            <p class="font-bold">Status: <span id="statusText">Loading...</span></p>
+        </div>
+        
+        <button onclick="runTest()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg mb-6">
+            🧪 Run Test
+        </button>
+        
+        <div id="results" class="space-y-4"></div>
+    </div>
+    
+    <!-- Load Ethers.js first - try multiple CDNs -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" 
+            onerror="this.onerror=null; this.src='https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js'"></script>
+    
+    <!-- Then load Pyth integration -->
+    <script src="js/pyth-integration.js"></script>
+    
+    <!-- Then our test script -->
+    <script>
+        async function runTest() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p class="text-yellow-400">Testing...</p>';
+            
+            try {
+                // Init
+                console.log('Initializing Pyth Network...');
+                const initSuccess = await initPyth();
+                
+                if (!initSuccess) {
+                    throw new Error('Pyth initialization failed - check console for details');
+                }
+                
+                document.getElementById('statusText').textContent = 'Connected ✅';
+                document.getElementById('status').className = 'bg-green-900/30 border border-green-500 rounded-lg p-4 mb-6';
+                
+                // Get price
+                console.log('Fetching BTC price...');
+                const btc = await getPythPrice('BTC/USD');
+                
+                results.innerHTML = `
+                    <div class="bg-green-900/30 border border-green-500 rounded-lg p-4">
+                        <h3 class="font-bold text-lg mb-2">✅ Test Passed!</h3>
+                        <p>BTC Price: <span class="text-green-400 font-bold">$${formatPythPrice(btc.price, 2)}</span></p>
+                        <p class="text-sm text-gray-400 mt-2">Source: Pyth Network on Polygon Amoy</p>
+                        <p class="text-xs text-gray-500 mt-1">Updated: ${new Date(btc.publishTime * 1000).toLocaleTimeString()}</p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Test failed:', error);
+                document.getElementById('statusText').textContent = 'Failed ❌';
+                document.getElementById('status').className = 'bg-red-900/30 border border-red-500 rounded-lg p-4 mb-6';
+                
+                results.innerHTML = `
+                    <div class="bg-red-900/30 border border-red-500 rounded-lg p-4">
+                        <h3 class="font-bold text-lg mb-2">❌ Test Failed</h3>
+                        <p class="text-sm mb-2">${error.message}</p>
+                        <p class="text-xs text-gray-400">Check browser console (F12) for details</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Auto-run on load after ethers is ready
+        window.addEventListener('load', () => {
+            if (typeof ethers === 'undefined') {
+                document.getElementById('statusText').textContent = 'Ethers.js not loaded ❌';
+                document.getElementById('status').className = 'bg-red-900/30 border border-red-500 rounded-lg p-4 mb-6';
+                document.getElementById('results').innerHTML = '<p class="text-red-400">Ethers.js library failed to load. Check internet connection.</p>';
+            } else {
+                runTest();
+            }
+        });
+    </script>
+</body>
+</html>

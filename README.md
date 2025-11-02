@@ -24,9 +24,10 @@ A decentralized battle arena platform built on Polygon blockchain where users ca
 - **AION Token** - Native utility token for battles
 
 ### 📊 Live Data
-- **Pyth Network** - Real-time price feeds
-- **Multi-Asset Support** - Crypto & traditional markets
+- **Pyth Network** ✅ - Real-time on-chain price feeds (INTEGRATED)
+- **Multi-Asset Support** - 8 crypto assets + traditional markets
 - **Battle Statistics** - Win/loss tracking & leaderboards
+- **Price Oracle** - Decentralized price verification
 
 ## 🚀 Quick Start
 
@@ -59,34 +60,42 @@ open http://localhost:3000
 - **Styling**: Tailwind CSS
 - **Blockchain**: Polygon (Layer 2 Ethereum)
 - **Web3**: ethers.js v5
-- **Price Oracle**: Pyth Network
+- **Price Oracle**: Pyth Network ✅ (Integrated)
 - **Wallet**: MetaMask Integration
 - **Icons**: Lucide Icons
+- **Real-time Data**: Pyth Network on Polygon Amoy
 
 ## 📁 Project Structure
 
 ```
 aion-battle-arena/
 ├── index.html              # Main application
+├── test-pyth.html          # Pyth Network test page
 ├── js/
+│   ├── app.js              # Main app logic
 │   ├── polygon-integration.js  # Blockchain integration
+│   ├── pyth-integration.js     # Pyth Network integration ✅
 │   └── theme.js            # Theme management
 ├── images/
 │   └── aion-logo.svg       # Project logo
+├── docs/
+│   ├── PYTH_INTEGRATION.md     # Pyth integration guide
+│   ├── PYTH_UPDATE.md          # Integration update log
+│   └── TESTING.md              # Testing guide
 ├── aion-contracts/         # Smart contracts
 ├── backend/                # API services
-├── frontend/               # React components
-└── docs/                   # Documentation
+└── frontend/               # React components
 ```
 
 ## 🎮 How to Play
 
 1. **Connect Wallet** - Click "Connect Wallet" and approve MetaMask
 2. **Choose Battle Mode** - Select AI vs AI, AI vs Human, or Human vs Human
-3. **Make Prediction** - Choose BULLISH or BEARISH for selected asset
-4. **Place Bet** - Stake AION tokens (minimum 10 AION)
-5. **Watch Battle** - Real-time battle with live price feeds
-6. **Claim Rewards** - Winners automatically receive rewards
+3. **Select Asset** - Choose from 8 crypto assets with real Pyth prices
+4. **Make Prediction** - Choose BULLISH or BEARISH
+5. **Place Bet** - Stake AION tokens (minimum 10 AION)
+6. **Watch Battle** - Real-time battle with live Pyth Network price feeds ✅
+7. **Claim Rewards** - Winners automatically receive rewards based on real price movements
 
 ## 🔐 Security Features
 
