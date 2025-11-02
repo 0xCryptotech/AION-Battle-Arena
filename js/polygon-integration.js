@@ -785,19 +785,31 @@ function getWalletState() {
  */
 async function connectWallet() {
     try {
+        // Check if already connecting
+        if (window.isConnecting) {
+            console.log('Connection already in progress');
+            return;
+        }
+        window.isConnecting = true;
+        
         // Show loading indicator
         showLoading('Connecting wallet...');
         
         // Initialize Web3
         if (!await initWeb3()) {
             hideLoading();
+            window.isConnecting = false;
             return;
         }
         
         // Request account access
-        await provider.send("eth_requestAccounts", []);
+        const accounts = await provider.send("eth_requestAccounts", []);
+        if (!accounts || accounts.length === 0) {
+            throw new Error('No accounts found');
+        }
+        
         signer = provider.getSigner();
-        userAddress = await signer.getAddress();
+        userAddress = accounts[0];
         
         // Update wallet state
         walletState.address = userAddress;
@@ -829,11 +841,13 @@ async function connectWallet() {
         
         // Hide loading and show success
         hideLoading();
+        window.isConnecting = false;
         showNotification('Wallet connected successfully!', 'success');
         
     } catch (error) {
         // Hide loading on error
         hideLoading();
+        window.isConnecting = false;
         
         // Handle specific errors using comprehensive error handler
         handleWalletError(error);
@@ -1390,9 +1404,15 @@ function toggleWalletDropdown() { console.log('Toggle dropdown'); }
 function showComingSoon() { showNotification('Coming soon!', 'info'); }
 function handleWalletError(error) {
     console.error('Wallet error:', error);
-    if (error.code === 4001) showNotification('User rejected request', 'warning');
-    else if (error.code === -32002) showNotification('Request pending in MetaMask', 'warning');
-    else showNotification('Wallet error: ' + error.message, 'error');
+    if (error.code === 4001) {
+        showNotification('Connection cancelled', 'warning');
+    } else if (error.code === -32002) {
+        showNotification('Please check MetaMask - request already pending', 'warning');
+    } else if (error.message && error.message.includes('already pending')) {
+        showNotification('Please complete the pending request in MetaMask', 'warning');
+    } else {
+        showNotification('Connection error. Please try again.', 'error');
+    }
 }
 function showLoading(msg = 'Loading...') {
     const loader = document.createElement('div');
