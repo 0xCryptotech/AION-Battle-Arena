@@ -1053,6 +1053,10 @@ async function startBattleWithBet(battleType) {
     if (typeof window.createBattleOnChain === 'function') {
         try {
             console.log('✅ Calling createBattleOnChain...');
+            console.log('  Direction:', direction1);
+            console.log('  Stake:', stakeAmount);
+            console.log('  Asset:', asset);
+            console.log('  Timeframe:', timeframe);
             showSimpleNotification('🔄 Preparing battle on-chain...', 'info');
             result = await window.createBattleOnChain(direction1, stakeAmount, asset, timeframe);
             console.log('✅ Result:', result);
@@ -1247,30 +1251,65 @@ async function runBattleSimulation(battleId, config) {
     if (marketAssets.includes(config.asset)) category = 'market';
     if (esportAssets.includes(config.asset)) category = 'esport';
     
-    // Use shared getCurrentPrice function to get same price as Dashboard
-    const startPrice = await getCurrentPrice(category, config.asset);
+    // Clear cache to get fresh start price
+    const cacheKey = `${category}_${config.asset}`;
+    delete window.lastFetchedPrices[cacheKey];
+    if (category === 'crypto' && typeof window.clearPriceCache === 'function') {
+        window.clearPriceCache(`${config.asset}/USD`);
+    }
+    
+    // Use shared getCurrentPrice function to get fresh price
+    const basePrice = await getCurrentPrice(category, config.asset);
+    
+    // Add small fluctuation to start price for variation (±0.1%)
+    const fluctuation = (Math.random() - 0.5) * 0.002;
+    const startPrice = basePrice * (1 + fluctuation);
+    
     const usePyth = category === 'crypto' && typeof window.getPythPrice === 'function';
     
-    console.log(`✅ Battle starting price for ${config.asset}: $${startPrice}`);
+    console.log(`✅ Battle starting price for ${config.asset}: $${startPrice} (base: $${basePrice}, fluctuation: ${(fluctuation*100).toFixed(3)}%)`);
     
-    document.getElementById('startPrice').textContent = '$' + startPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    document.getElementById('currentPrice').textContent = '$' + startPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const startPriceEl = document.getElementById('startPrice');
+    const currentPriceEl = document.getElementById('currentPrice');
+    
+    if (startPriceEl) {
+        const startPriceText = '$' + startPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        startPriceEl.textContent = startPriceText;
+        console.log('✅ Start price set in DOM:', startPriceText);
+    }
+    if (currentPriceEl) {
+        currentPriceEl.textContent = '$' + startPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
     
     // Price update function - use shared getCurrentPrice
     const updatePrice = async () => {
-        // Clear both caches to get fresh price
-        const cacheKey = `${category}_${config.asset}`;
-        delete window.lastFetchedPrices[cacheKey];
-        
-        // Clear Pyth cache for crypto assets
-        if (category === 'crypto' && typeof window.clearPriceCache === 'function') {
-            window.clearPriceCache(`${config.asset}/USD`);
+        try {
+            // Clear both caches to get fresh price
+            const cacheKey = `${category}_${config.asset}`;
+            delete window.lastFetchedPrices[cacheKey];
+            
+            // Clear Pyth cache for crypto assets
+            if (category === 'crypto' && typeof window.clearPriceCache === 'function') {
+                window.clearPriceCache(`${config.asset}/USD`);
+            }
+            
+            // Get new price with timeout
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Price fetch timeout')), 3000)
+            );
+            
+            const newPrice = await Promise.race([
+                getCurrentPrice(category, config.asset),
+                timeoutPromise
+            ]);
+            
+            console.log(`Battle price update: ${newPrice}`);
+            return newPrice;
+        } catch (error) {
+            console.error('Price update failed:', error);
+            // Return last price if fetch fails
+            return lastPrice || startPrice;
         }
-        
-        // Get new price using shared function
-        const newPrice = await getCurrentPrice(category, config.asset);
-        console.log(`Battle price update: ${newPrice}`);
-        return newPrice;
     };
     
     // Store last price for battle end
@@ -1294,12 +1333,21 @@ async function runBattleSimulation(battleId, config) {
             
             lastPrice = displayPrice;
             
+            // Check for duplicates
+            const allCurrentPrice = document.querySelectorAll('#currentPrice');
+            if (allCurrentPrice.length > 1) {
+                console.warn('⚠️ Found', allCurrentPrice.length, 'elements with id="currentPrice"!');
+            }
+            
             const currentPriceEl = document.getElementById('currentPrice');
             if (currentPriceEl) {
-                currentPriceEl.textContent = '$' + displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                console.log('✅ Current price updated in DOM');
+                const newText = '$' + displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                currentPriceEl.textContent = newText;
+                currentPriceEl.style.border = '2px solid red'; // Debug border
+                console.log('✅ Current price updated in DOM:', newText);
             } else {
                 console.error('❌ currentPrice element not found!');
+                console.log('Available elements:', document.querySelectorAll('[id*="Price"]'));
             }
             
             // Calculate price change
@@ -1414,6 +1462,11 @@ async function endBattle(battleId, config, startPrice, endPrice) {
         await window.refreshBalances();
     }
     updateUserInfo();
+    
+    // Hide loading overlay
+    if (typeof window.hideLoading === 'function') {
+        window.hideLoading();
+    }
     
     // Show notification
     if (outcome === 'WIN') {

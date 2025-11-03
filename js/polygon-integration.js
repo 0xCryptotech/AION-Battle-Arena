@@ -1113,24 +1113,36 @@ async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
     }
     
     try {
+        console.log('🔍 Starting battle creation...');
+        console.log('  Wallet:', walletState.address);
+        console.log('  Stake:', stakeAmount, 'AION');
+        
         // Check balance first
         showLoading('Checking balance...');
+        console.log('📊 Checking AION balance...');
         const hasBalance = await checkAionBalance(stakeAmount);
         
         if (!hasBalance) {
             hideLoading();
+            console.log('❌ Insufficient balance');
             const balance = await getContract().then(c => c.balanceOf(walletState.address)).then(b => ethers.utils.formatEther(b));
             showNotification(`Insufficient AION balance. You have ${parseFloat(balance).toFixed(2)} AION, need ${stakeAmount} AION`, 'error');
             return { success: false, error: 'Insufficient balance' };
         }
+        console.log('✅ Balance check passed');
         
         // Check and approve tokens
+        console.log('🔐 Checking token approval...');
         const approved = await checkAndApproveTokens(stakeAmount);
         if (!approved) {
+            console.log('❌ Token approval failed');
+            hideLoading();
             return { success: false, error: 'Token approval failed' };
         }
+        console.log('✅ Token approval passed');
         
         // Create battle
+        console.log('⚔️ Creating battle transaction...');
         showLoading('Creating battle on-chain...');
         showNotification('⚔️ Creating battle on Polygon Amoy...', 'info');
         
@@ -1142,6 +1154,15 @@ async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
         console.log('  - Amount:', amount.toString(), 'wei (', stakeAmount, 'AION)');
         console.log('  - Contract:', contract.address);
         console.log('  - User:', walletState.address);
+        
+        // Simulate transaction first to get better error
+        try {
+            await contract.callStatic.createBattle(direction, amount);
+            console.log('✅ Transaction simulation successful');
+        } catch (simError) {
+            console.error('❌ Transaction simulation failed:', simError);
+            throw simError;
+        }
         
         const tx = await contract.createBattle(direction, amount);
         console.log('✅ Transaction sent:', tx.hash);
@@ -1185,8 +1206,40 @@ async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
         console.error('Error message:', error.message);
         console.error('Error data:', error.data);
         console.error('Error code:', error.code);
+        
+        // Try to decode error reason
+        let errorMessage = error.message;
+        
+        // Check various error properties
+        if (error.reason) {
+            errorMessage = error.reason;
+            console.log('📋 Error reason:', error.reason);
+        }
+        if (error.data && error.data.message) {
+            errorMessage = error.data.message;
+            console.log('📋 Error data message:', error.data.message);
+        }
+        if (error.error) {
+            console.log('📋 Error object:', error.error);
+            if (error.error.message) errorMessage = error.error.message;
+            if (error.error.data && error.error.data.message) errorMessage = error.error.data.message;
+        }
+        
+        // Check for common errors
+        if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient balance')) {
+            showNotification('❌ Insufficient MATIC for gas fees', 'error');
+        } else if (errorMessage.includes('user rejected') || errorMessage.includes('User denied')) {
+            showNotification('❌ Transaction cancelled', 'warning');
+        } else if (errorMessage.includes('insufficient allowance') || errorMessage.includes('ERC20')) {
+            showNotification('❌ Token approval failed. Please try again.', 'error');
+        } else if (errorMessage.includes('Internal JSON-RPC')) {
+            showNotification('❌ Transaction failed. Check console for details.', 'error');
+        } else {
+            showNotification(`❌ Failed: ${errorMessage.substring(0, 100)}`, 'error');
+        }
+        
         handleWalletError(error);
-        return { success: false, error: error.message };
+        return { success: false, error: errorMessage };
     }
 }
 
