@@ -198,7 +198,7 @@ function updateUserInfo() {
  * Update user balance display with real data
  */
 async function updateUserBalanceDisplay() {
-    if (!isConnected || !window.getUserAddress()) return;
+    if (!window.isWalletConnected() || !window.getUserAddress()) return;
     
     try {
         // Get real AION balance
@@ -698,8 +698,20 @@ async function updateModalLivePrice() {
     const category = categorySelect?.value || 'crypto';
     const asset = assetSelect?.value || 'BTC';
     
+    // Clear caches for fresh price
+    const cacheKey = `${category}_${asset}`;
+    delete window.lastFetchedPrices[cacheKey];
+    if (category === 'crypto' && typeof window.clearPriceCache === 'function') {
+        window.clearPriceCache(`${asset}/USD`);
+    }
+    
     const currentPrice = await getCurrentPrice(category, asset);
-    priceEl.textContent = `$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    
+    // Add small fluctuation for visual effect
+    const fluctuation = (Math.random() - 0.5) * 0.004;
+    const displayPrice = currentPrice * (1 + fluctuation);
+    
+    priceEl.textContent = `$${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 }
 
 // ============================================
@@ -756,6 +768,7 @@ function openBattleModal(battleType) {
     
     let htmlContent = `
         <div class="bg-gradient-to-br from-gray-900 to-black border-2 border-red-500 rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <!-- Content Section -->
             <div class="p-6">
             <h3 class="text-2xl font-bold mb-2 text-white">${info.title}</h3>
             <p class="text-gray-400 mb-3">${info.desc}</p>
@@ -898,20 +911,18 @@ function openBattleModal(battleType) {
                     </div>
                 </div>
             </div>
-            </div>
-            </div>
-        
-        <!-- Buttons Section -->
-        <div class="px-6 pb-6">
-            <div class="flex flex-col gap-3">
-                <button onclick="window.startBattleWithBet('${battleType}')" class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 font-bold text-sm">
+            <!-- End Content Section -->
+            
+            <!-- Buttons Section -->
+            <div class="border-t border-gray-700 p-6">
+                <button onclick="window.startBattleWithBet('${battleType}')" class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 font-bold text-sm mb-3">
                     Start Battle
                 </button>
                 <button onclick="closeBattleModal()" class="w-full bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-600 font-bold text-sm">
                     Cancel
                 </button>
             </div>
-        </div>
+            <!-- End Buttons Section -->
         </div>
     `;
     
@@ -1036,7 +1047,7 @@ async function startBattleWithBet(battleType) {
     let result = { success: false, demo: true };
     
     console.log('🔍 Checking createBattleOnChain function:', typeof window.createBattleOnChain);
-    console.log('🔍 Wallet connected:', isConnected, window.getUserAddress());
+    console.log('🔍 Wallet connected:', window.isWalletConnected(), window.getUserAddress());
     console.log('🔍 Battle params:', { direction1, stakeAmount, asset, timeframe });
     
     if (typeof window.createBattleOnChain === 'function') {
@@ -1247,17 +1258,26 @@ async function runBattleSimulation(battleId, config) {
     
     // Price update function - use shared getCurrentPrice
     const updatePrice = async () => {
-        // Clear cache to get fresh price
+        // Clear both caches to get fresh price
         const cacheKey = `${category}_${config.asset}`;
         delete window.lastFetchedPrices[cacheKey];
         
+        // Clear Pyth cache for crypto assets
+        if (category === 'crypto' && typeof window.clearPriceCache === 'function') {
+            window.clearPriceCache(`${config.asset}/USD`);
+        }
+        
         // Get new price using shared function
         const newPrice = await getCurrentPrice(category, config.asset);
+        console.log(`Battle price update: ${newPrice}`);
         return newPrice;
     };
     
+    // Store last price for battle end
+    let lastPrice = startPrice;
+    
     // Battle simulation interval
-    const interval = setInterval(async () => {
+    const interval = setInterval(() => {
         timeLeft--;
         
         // Update timer
@@ -1265,20 +1285,38 @@ async function runBattleSimulation(battleId, config) {
         const progress = (timeLeft / duration) * 100;
         document.getElementById('timeBar').style.width = progress + '%';
         
-        // Update price
-        const newPrice = await updatePrice();
-        document.getElementById('currentPrice').textContent = '$' + newPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        
-        // Calculate price change
-        const priceChangePercent = ((newPrice - startPrice) / startPrice) * 100;
-        const priceChangeEl = document.getElementById('priceChange');
-        priceChangeEl.textContent = (priceChangePercent >= 0 ? '+' : '') + priceChangePercent.toFixed(2) + '%';
-        priceChangeEl.className = priceChangePercent >= 0 ? 'text-green-400 text-xl font-bold' : 'text-red-400 text-xl font-bold';
+        // Update price async (non-blocking)
+        updatePrice().then(newPrice => {
+            // Add random fluctuation for visual effect (±0.2%)
+            const fluctuation = (Math.random() - 0.5) * 0.004;
+            const displayPrice = newPrice * (1 + fluctuation);
+            console.log(`Display price with fluctuation: $${displayPrice.toFixed(2)} (base: $${newPrice.toFixed(2)}, fluctuation: ${(fluctuation*100).toFixed(3)}%)`);
+            
+            lastPrice = displayPrice;
+            
+            const currentPriceEl = document.getElementById('currentPrice');
+            if (currentPriceEl) {
+                currentPriceEl.textContent = '$' + displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                console.log('✅ Current price updated in DOM');
+            } else {
+                console.error('❌ currentPrice element not found!');
+            }
+            
+            // Calculate price change
+            const priceChangePercent = ((displayPrice - startPrice) / startPrice) * 100;
+            const priceChangeEl = document.getElementById('priceChange');
+            if (priceChangeEl) {
+                priceChangeEl.textContent = (priceChangePercent >= 0 ? '+' : '') + priceChangePercent.toFixed(2) + '%';
+                priceChangeEl.className = priceChangePercent >= 0 ? 'text-green-400 text-xl font-bold' : 'text-red-400 text-xl font-bold';
+            }
+        }).catch(err => {
+            console.error('Price update error:', err);
+        });
         
         // Battle ends
         if (timeLeft <= 0) {
             clearInterval(interval);
-            endBattle(battleId, config, startPrice, newPrice);
+            endBattle(battleId, config, startPrice, lastPrice);
         }
     }, 1000);
 }
@@ -1523,7 +1561,7 @@ let dashboardInterval = null;
 /**
  * Update dashboard prediction with Pyth Network prices
  */
-async function updateDashboardPrediction() {
+function updateDashboardPrediction() {
     const aiSelect = document.getElementById('dash-ai-select');
     const coinSelect = document.getElementById('dash-coin-select');
     
@@ -1576,11 +1614,21 @@ async function updateDashboardPrediction() {
     document.getElementById('dash-coin-name').textContent = selectedCoin.name;
     document.getElementById('dash-ai-info').textContent = `${selectedAI} • ${confidence}%`;
     
-    // Get current price using shared function
-    const currentPrice = await getCurrentPrice(category, selectedCoin.symbol);
+    // Get current price using shared function (non-blocking)
+    // Clear cache to force fresh price
+    const cacheKey = `${category}_${selectedCoin.symbol}`;
+    delete window.lastFetchedPrices[cacheKey];
     
-    document.getElementById('dash-live-price').textContent = `$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    document.getElementById('dash-live-price').className = `font-bold text-xl ${isBullish ? 'text-green-400' : 'text-red-400'}`;
+    getCurrentPrice(category, selectedCoin.symbol).then(currentPrice => {
+        // Add small random fluctuation for visual effect (±0.05%)
+        const fluctuation = (Math.random() - 0.5) * 0.001;
+        const displayPrice = currentPrice * (1 + fluctuation);
+        
+        document.getElementById('dash-live-price').textContent = `$${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('dash-live-price').className = `font-bold text-xl ${isBullish ? 'text-green-400' : 'text-red-400'}`;
+    }).catch(err => {
+        console.error('Dashboard price update error:', err);
+    });
     
     // Update direction badge
     const directionBadge = document.getElementById('dash-direction-badge');

@@ -217,6 +217,20 @@ async function getPriceWithCache(symbol) {
 }
 
 /**
+ * Clear price cache for specific symbol or all
+ * @param {string} symbol - Asset symbol (optional, clears all if not provided)
+ */
+function clearPriceCache(symbol = null) {
+    if (symbol) {
+        delete pythState.priceCache[symbol];
+        console.log(`🗑️ Cleared cache for ${symbol}`);
+    } else {
+        pythState.priceCache = {};
+        console.log('🗑️ Cleared all price cache');
+    }
+}
+
+/**
  * Subscribe to price updates (polling-based)
  * @param {string} symbol - Asset symbol
  * @param {Function} callback - Callback function
