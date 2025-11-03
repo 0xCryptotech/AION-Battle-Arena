@@ -1389,11 +1389,16 @@ async function endBattle(battleId, config, startPrice, endPrice) {
         earnings = -config.stakeAmount;
     }
     
-    // Complete battle on-chain if it was created on-chain
-    // Note: Only for Human vs Human battles (contract requires 2 real players)
+    // Complete battle on-chain ONLY for Human vs Human battles
+    // AI battles are single-player and cannot be completed on-chain (contract requires 2 players)
     const isHumanVsHuman = config.type === 'HUMAN_VS_HUMAN';
-    if (isHumanVsHuman && config.onChain && config.battleId && typeof window.completeBattleOnChain === 'function') {
+    const isAIBattle = config.type === 'AI_VS_AI' || config.type === 'AI_VS_HUMAN';
+    
+    if (isAIBattle) {
+        console.log('🤖 AI battle - skipping on-chain completion (single player)');
+    } else if (isHumanVsHuman && config.onChain && config.battleId && typeof window.completeBattleOnChain === 'function') {
         try {
+            console.log('🏁 Completing Human vs Human battle on-chain...');
             showSimpleNotification('🏁 Completing battle on-chain...', 'info');
             const userAddr = window.getUserAddress();
             const winner = outcome === 'WIN' ? userAddr : '0x0000000000000000000000000000000000000000';
@@ -1458,15 +1463,30 @@ async function endBattle(battleId, config, startPrice, endPrice) {
     }
     
     // Update UI and refresh balance
-    if (typeof window.refreshBalances === 'function') {
-        await window.refreshBalances();
+    try {
+        if (typeof window.refreshBalances === 'function') {
+            await window.refreshBalances();
+        }
+        updateUserInfo();
+    } catch (error) {
+        console.error('Error updating UI:', error);
     }
-    updateUserInfo();
     
-    // Hide loading overlay
+    // Always hide loading overlay
     if (typeof window.hideLoading === 'function') {
         window.hideLoading();
     }
+    
+    // Force remove loading overlay as backup
+    setTimeout(() => {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('hidden');
+            console.log('🛡️ Force removed loading overlay');
+        }
+    }, 500);
+    
+    console.log('✅ Loading overlay hidden');
     
     // Show notification
     if (outcome === 'WIN') {

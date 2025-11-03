@@ -1105,8 +1105,10 @@ async function checkAndApproveTokens(amount) {
     }
 }
 
-// Create Battle
-async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
+// Create Battle with retry
+async function createBattleOnChain(direction, stakeAmount, asset, timeframe, retryCount = 0) {
+    const MAX_RETRIES = 2;
+    
     if (!isContractDeployed()) {
         showNotification('Contract not deployed yet. Using demo mode.', 'warning');
         return { success: false, demo: true };
@@ -1116,6 +1118,19 @@ async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
         console.log('🔍 Starting battle creation...');
         console.log('  Wallet:', walletState.address);
         console.log('  Stake:', stakeAmount, 'AION');
+        
+        // Check provider connection
+        if (!walletState.provider) {
+            throw new Error('Provider not connected');
+        }
+        
+        // Verify network
+        const network = await walletState.provider.getNetwork();
+        if (network.chainId !== 80002) {
+            showNotification('❌ Please switch to Polygon Amoy Testnet', 'error');
+            return { success: false, error: 'Wrong network' };
+        }
+        console.log('✅ Network check passed (Chain ID: 80002)');
         
         // Check balance first
         showLoading('Checking balance...');
@@ -1141,6 +1156,10 @@ async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
         }
         console.log('✅ Token approval passed');
         
+        // Wait a bit for approval to propagate
+        console.log('⏳ Waiting for approval to propagate...');
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
         // Create battle
         console.log('⚔️ Creating battle transaction...');
         showLoading('Creating battle on-chain...');
@@ -1157,10 +1176,12 @@ async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
         
         // Simulate transaction first to get better error
         try {
+            console.log('🧪 Simulating transaction...');
             await contract.callStatic.createBattle(direction, amount);
             console.log('✅ Transaction simulation successful');
         } catch (simError) {
             console.error('❌ Transaction simulation failed:', simError);
+            console.error('Simulation error reason:', simError.reason || simError.message);
             throw simError;
         }
         
@@ -1201,11 +1222,28 @@ async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
             txHash: receipt.transactionHash
         };
     } catch (error) {
-        hideLoading();
-        console.error('Error creating battle:', error);
+        console.error('Error creating battle (attempt ' + (retryCount + 1) + '):', error);
         console.error('Error message:', error.message);
         console.error('Error data:', error.data);
         console.error('Error code:', error.code);
+        
+        // Retry on network errors
+        const isNetworkError = error.code === -32603 || 
+                              error.code === 'NETWORK_ERROR' ||
+                              error.message.includes('timeout') ||
+                              error.message.includes('network');
+        
+        if (isNetworkError && retryCount < MAX_RETRIES) {
+            console.log(`🔄 Network error detected, retrying battle creation (${retryCount + 1}/${MAX_RETRIES})...`);
+            console.log('Error type:', error.code, error.message);
+            showNotification(`🔄 Network issue, retrying... (${retryCount + 1}/${MAX_RETRIES})`, 'info');
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s
+            return createBattleOnChain(direction, stakeAmount, asset, timeframe, retryCount + 1);
+        }
+        
+        console.log('❌ Max retries reached or non-network error, falling back to demo mode');
+        
+        hideLoading();
         
         // Try to decode error reason
         let errorMessage = error.message;
@@ -1233,7 +1271,7 @@ async function createBattleOnChain(direction, stakeAmount, asset, timeframe) {
         } else if (errorMessage.includes('insufficient allowance') || errorMessage.includes('ERC20')) {
             showNotification('❌ Token approval failed. Please try again.', 'error');
         } else if (errorMessage.includes('Internal JSON-RPC')) {
-            showNotification('❌ Transaction failed. Check console for details.', 'error');
+            showNotification('❌ Network error. Using demo mode.', 'warning');
         } else {
             showNotification(`❌ Failed: ${errorMessage.substring(0, 100)}`, 'error');
         }
